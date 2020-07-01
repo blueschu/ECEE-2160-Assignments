@@ -1,0 +1,9 @@
+/cmake-build-debug
+*.aux
+*.log
+*.synctex.gz
+*.pdf
+*.toc
+*.bbl
+*.blg
+*.out
