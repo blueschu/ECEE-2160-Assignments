@@ -176,6 +176,7 @@
     language=C++,	% Not sure if redundant now, but was required at one point
     style=labreportstyle,
     directivestyle={\color{codedirective}},
+    morekeywords={constexpr,nullptr}
 }
 
 % shell specific styling
@@ -192,5 +193,5 @@
 %
 % Note that the style is automatically selected based on the language paramater.
 \newcommand{\includecode}[2][C++]{%
-    \lstinputlisting[caption={\texttt{#2}}, language=#1, style=labreportstyle-#1]{#2}
+    \lstinputlisting[caption={\texttt{#2}}, label={lst:#2}, language=#1, style=labreportstyle-#1]{#2}
 }
