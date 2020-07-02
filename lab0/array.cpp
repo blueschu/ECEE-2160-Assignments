@@ -5,12 +5,13 @@
  * Date:    2020-07-01
  *
  */
+
+#include "lab0_utils.h"
+
 #include <array>            // for std::array
 #include <ctime>            // for std::time
 #include <functional>       // for std::function
 #include <iostream>         // for std::cout, std::cin
-
-#include "lab0_utils.h"
 
 // Suppress warnings for using std::rand instead of STL random library.
 #pragma ide diagnostic ignored "cert-msc50-cpp"
@@ -36,6 +37,7 @@ constexpr std::size_t ARRAY_SIZE{10};
  */
 int weak_random_int(int min, int max)
 {
+    // Use std::rand instead of STL random library for simplicity.
     return std::rand() % (max - min + 1) + min;
 }
 
@@ -93,5 +95,5 @@ int main()
     std::cout << "\nRandom integers from [" << RANDOM_MIN << ',' << RANDOM_MAX << "] (sorted): ";
     print_iter(std::cout, random_array.begin(), random_array.end(), ", ");
 
-    return EXIT_SUCCESS;
+    return 0;
 }

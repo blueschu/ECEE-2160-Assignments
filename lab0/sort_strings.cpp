@@ -4,17 +4,13 @@
  * Author:  Brian Schubert
  * Date:    2020-07-01
  *
- * References
- * ==========
- *
- * - http://www.cplusplus.com/reference/string/string/compare/
- *
  */
+
+#include "lab0_utils.h"
+
 #include <array>            // for std::array
 #include <iostream>         // for std::cout, std::cin
 #include <string>           // for std::string
-
-#include "lab0_utils.h"
 
 /// The number of strings to read from stdin.
 constexpr std::size_t STRING_COUNT{10};
@@ -31,7 +27,7 @@ int main()
             // Print an error message and exit with nonzero status if we fail
             // to read a string.
             std::cerr << "Invalid input";
-            return EXIT_SUCCESS;
+            return 1;
         }
     }
 
@@ -50,5 +46,5 @@ int main()
     std::cout << "\n\nSorted Strings:\n=======================\n";
     print_iter(std::cout, input_strings.begin(), input_strings.end(), ",\n");
 
-    return EXIT_SUCCESS;
+    return 0;
 }

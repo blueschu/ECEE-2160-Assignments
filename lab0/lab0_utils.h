@@ -1,8 +1,8 @@
 /*
  * ECEE 2160 Lab Assignment 0 Utilities
  *
- * Since all of the utility functions in this header are templated, not
- * implementation file was required.
+ * All of the utility functions defined in this header are templated, so no
+ * implementation (.cpp) file is required.
  *
  * Author:  Brian Schubert
  * Date:    2020-07-01
@@ -28,8 +28,10 @@
  * stream with elements separated by the given delimiter.
  *
  * The delimiter is taken as a std::string_view so that C-style strings,
- * std::string, and other string collection types can be use without requireing
+ * std::string, and other string collection types can be use without requiring
  * manual conversions.
+ *
+ * This function is used in lab assignments 0.2 and 0.3.
  *
  * @tparam I Iterator type.
  * @param out Output stream to be written to.
@@ -60,9 +62,12 @@ void print_iter(std::ostream& out, I iter, I end, const std::string_view delim)
 }
 
 /**
- * Implementation of selection sort.
+ * Sorts the given array of consecutive elements.
  *
- * This implementation occurs in O(1) space and O(n^2) time.
+ * This function implements the selection sort algorithm per the lab assignment
+ * instructions, which occurs in O(1) space and O(n^2) time.
+ *
+ * This function is used in lab assignments 0.2 and 0.3.
  *
  * @tparam T Array content type.
  * @param values Mutable pointer to array contents.
