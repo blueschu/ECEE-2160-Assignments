@@ -47,7 +47,7 @@ void print_iter(std::ostream& out, I iter, I end, const std::string_view delim)
         return;
     }
     // Track the previously yielded element from the iterator while consuming.
-    I prev = iter;
+    I prev{iter};
 
     // Advance the iterator and check to see if it has reached the end.
     while (++iter != end) {
@@ -78,11 +78,11 @@ void selection_sort_array(T* values, std::size_t size)
 {
     for (std::size_t i{0}; i < size; ++i) {
         // Store both the value and index of the  minimum unsorted element.
-        auto min_element{values[i]};
-        auto min_index{i};
+        T min_element{values[i]};
+        std::size_t min_index{i};
 
         // Locate the index of the minimum element in the unsorted porition.
-        for (auto j{i + 1}; j < size; ++j) {
+        for (std::size_t j{i + 1}; j < size; ++j) {
             if (values[j] < min_element) {
                 min_element = values[j];
                 min_index = j;

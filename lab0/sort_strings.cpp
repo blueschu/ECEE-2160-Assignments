@@ -22,8 +22,8 @@ int main()
 
     std::cout << "Enter " << STRING_COUNT << " whitespace separated strings: ";
 
-    for (std::size_t i{0}; i < STRING_COUNT; ++i) {
-        if (!(std::cin >> input_strings[i])) {
+    for (auto& elem : input_strings) {
+        if (!(std::cin >> elem)) {
             // Print an error message and exit with nonzero status if we fail
             // to read a string.
             std::cerr << "Invalid input";

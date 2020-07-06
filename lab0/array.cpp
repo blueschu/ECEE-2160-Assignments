@@ -13,7 +13,7 @@
 #include <functional>       // for std::function
 #include <iostream>         // for std::cout, std::cin
 
-// Suppress warnings for using std::rand instead of STL random library.
+// Suppress linter warnings for using std::rand instead of STL random library.
 #pragma ide diagnostic ignored "cert-msc50-cpp"
 
 // Using anonymous namespace to given symbols internal linkage.
@@ -94,6 +94,7 @@ int main()
     // Print the sorted array to stdout.
     std::cout << "\nRandom integers from [" << RANDOM_MIN << ',' << RANDOM_MAX << "] (sorted): ";
     print_iter(std::cout, random_array.begin(), random_array.end(), ", ");
+    std::cout << '\n';
 
     return 0;
 }
