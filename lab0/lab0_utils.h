@@ -12,11 +12,11 @@
  *
  *  - http://www.cplusplus.com/reference/random/
  *  - http://www.cplusplus.com/reference/algorithm/
- *  - https://stackoverflow.com/questions/5586377/
+ *  - https://en.cppreference.com/w/cpp/named_req/ForwardIterator
  */
 
-#ifndef ECEE_2160_LAP_REPORTS_LAB0_UTILS_H
-#define ECEE_2160_LAP_REPORTS_LAB0_UTILS_H
+#ifndef ECEE_2160_LAB_REPORTS_LAB0_UTILS_H
+#define ECEE_2160_LAB_REPORTS_LAB0_UTILS_H
 
 #include <iosfwd>           // for std::ostream - the full iostream header isn't
                             // required since we only need the declarations.
@@ -94,4 +94,4 @@ void selection_sort_array(T* values, std::size_t size)
     }
 }
 
-#endif //ECEE_2160_LAP_REPORTS_LAB0_UTILS_H
+#endif //ECEE_2160_LAB_REPORTS_LAB0_UTILS_H
