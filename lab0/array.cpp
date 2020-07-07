@@ -88,7 +88,7 @@ int main()
     std::cout << "Random integers from [" << RANDOM_MIN << ',' << RANDOM_MAX << "]:          ";
     print_iter(std::cout, random_array.begin(), random_array.end(), ", ");
 
-    // Sort the array of random integers
+    // Sort the array of random integers.
     selection_sort_array(random_array.data(), random_array.size());
 
     // Print the sorted array to stdout.

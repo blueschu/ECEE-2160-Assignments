@@ -23,6 +23,7 @@ int main()
     std::cout << "Enter " << STRING_COUNT << " whitespace separated strings: ";
 
     for (auto& elem : input_strings) {
+        // operator>>(std::istream&, T) returns false on input failure.
         if (!(std::cin >> elem)) {
             // Print an error message and exit with nonzero status if we fail
             // to read a string.
@@ -30,10 +31,6 @@ int main()
             return 1;
         }
     }
-
-    // Print the unsorted strings to stdout.
-    std::cout << "\nUnsorted Strings:\n=======================\n";
-    print_iter(std::cout, input_strings.begin(), input_strings.end(), ",\n");
 
     // Sort the strings alphabetically.
     //
@@ -43,8 +40,10 @@ int main()
     selection_sort_array(input_strings.data(), input_strings.size());
 
     // Print the sorted strings to stdout.
-    std::cout << "\n\nSorted Strings:\n=======================\n";
+    std::cout << "Sorted Strings:\n=======================\n";
     print_iter(std::cout, input_strings.begin(), input_strings.end(), ",\n");
+
+    std::cout << '\n';
 
     return 0;
 }
