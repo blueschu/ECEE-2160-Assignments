@@ -1,0 +1,234 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{0}
+\def\LABtitle{DE1-SoC Linux Getting Started}
+\def\LABdatedue{July 8th, 2020}
+\def\LABdatesubmitted{July 7th, 2020}
+\def\LABabstract{\small This lab served as an introduction to GNU/Linux and to the DE1-SoC embedded computing device. Basic C++ programs were created and compiled for the ARM processor on the DE1-SoC using the GNU Compiler Collection's C++ compiler. These programs were executed remotely on the DE1-SoC over an SSH (Secure Shell) connection.}
+
+
+\input{../ecee-2160-header.tex}
+
+\begin{document}
+\makelabtitle
+
+\section*{Introduction}
+
+This lab was an introduction to the DE1-SoC embedded computing device. The primrary objective was to to prepare introductory C++ programs that can be run on the DE1-SoC board's ARM processor. The GNU Compiler Collection's C++ compiler was used to create executables for the target ARM architecture, which were then run on the board over an SSH connection.
+
+Three programs were produced for this lab. The first was a traditional ``Hello, World!'' program, which wrote a prescribed message to the standard output. The second program generated a sequence of ten random integers from these interval $[0, 99]$, printed these integers to the standard output, sorted them in ascending order, and then printed the sorted sequence. For simplicity, the C standard library's \texttt{std::rand()} function was used to generate the random integers instead of the the C++11 \texttt{random} library. The third program read a sequence of ten whitespace-separated strings from the standard input, sorted them in alphabetical order, and then printed them to the standard output.
+
+%The primary focus of this lab was creation of C++ programs that can be run on DE1-SoC board's ARM processor. Secondary objectives including gaining familiarity with GNU/Linux and with software applications such as \texttt{scp} and \texttt{vim}. A basic familiarity with programming was assumed
+%
+%
+%
+%The purpose of this lab was to prepare introductory C++ programs that can be run on the DE1-SoC board's ARM processor. We used the GNU Compiler Collection's C++ compiler to create C++ executables for the target ARM architecture, which were then run on the board over an SSH connection.
+
+\section*{Lab Discussion}
+
+The prelab component of this lab consisted of reviewing the DE1-SoC User Manual \cite{de1-soc-linux-manual} and other reference materials. No questions needed to be answered.
+
+\subsection*{Materials}
+
+The following materials were used in this lab
+\begin{enumerate}
+    \item Host computer (Linux Mint 19.3, x86\_64) %  kernel 4.15.0,
+    \item DE1-SoC board (de1soclinux, armv7l) %  kernel 3.18.0,
+\end{enumerate}
+
+\subsection*{Software}
+The following software was installed on the host machine.
+\begin{enumerate}
+    \item \texttt{arm-linux-gnueabihf-g++} --- GNU C++ compiler for the armhf architecture (v7.5.0)
+    \item \texttt{ssh} --- OpenSSH secure shell client
+    \item \texttt{scp} --- Secure file copy client
+\end{enumerate}
+
+\subsection*{Pre-Lab Setup}
+
+This was the first lab for this course, so some initial setup was required to prepare the development environment for lab programs.
+
+For this course, we opted to pursue \emph{cross compilation} for preparing executables for the DE1-SoC. Cross compilation involves compiling a program for a different architecture than the one on which the compiler is running. For this lab, we needed to compile programs for an ARMv7 processor	from a host system with an Intel x86\_64 processor.
+
+%writing and compiling a program on a host computer and then transferring the resulting executable to the target
+%
+%
+%Our cross compilation process involved writing and compiling C++ programs on a host computer and then transferring the resulting executable onto the DE1-SoC board. This process contrasted with one using \emph{native compilation}, which would have involved transferring the source code for programs onto the DE1-SoC and then compiling and running the program directly on the board.
+
+To facilitate cross compilation, a compiler for the DE1-SoC board's architecture (armhf) needed to be installed. This was accomplished by running the following commands on the host computer.
+\pagebreak[2] % Encourage breaking before listing
+\begin{lstlisting}[style=labreportstyle-sh]
+# --- Host computer --- 
+$ sudo apt update                               # Update package listings
+$ sudo apt install g++-arm-linux-gnueabihf      # Install compiler for armhf architecture
+$ arm-linux-gnueabihf-g++ --version | head -1   # Verify compiler version
+arm-linux-gnueabihf-g++ (Ubuntu/Linaro 7.5.0-3ubuntu1~18.04) 7.5.0
+\end{lstlisting}
+
+Next, the host computer needed to be prepared for accessing the DE1-SoC board over SSH. The following configuration was added to the host computer's SSH config file (\texttt{\textasciitilde/.ssh/config}) to simplify SSH access to the DE1-SoC board. In particular, adding this configuration reduced the verbosity of the \texttt{scp} commands required to transfer files to and from the DE1-SoC board. The required SSH parameters were acquired from \cite{de1-soc-linux-manual,nengo-fpga-connecting-de1-soc}.
+
+\begin{lstlisting}[
+style=labreportstyle-sh, 
+caption={SSH Configuration (\texttt{\textasciitilde/.ssh/config})}, 
+emph={yes,aes256,ctr},
+emphstyle=\color{codedirective},
+morekeywords={Host,HostName,User,Ciphers,VisualHostKey},
+label={lst:ssh-config}
+]
+# ...
+Host ecee2160-de1soc
+    HostName 192.168.1.123
+    User root
+    Ciphers aes256-ctr
+    VisualHostKey yes
+\end{lstlisting}
+
+Finally, before we could begin compiling programs for the DE1-SoC, we needed to determine what Application Binary Interface (ABI) was used in the version of the C++ standard library available on the DE1-SoC. From prior experience with GCC, we were aware that the ABI of the GNU C++ standard library changed significantly at some point in the toolchain's history \cite{gnu-dual-abi}. If the operating system on the DE1-SoC was sufficiently old, it was possible that the default ABI used by the compiler we had installed would differ from the ABI available on the board. We were unable to find any information regarding the GCC or C++ standard library version available on the DE1-SoC in the manual \cite{de1-soc-linux-manual}, so we performed a manual check using the following command.
+\begin{lstlisting}[style=labreportstyle-sh]
+# --- Host computer --- 
+$ ssh ecee2160-de1soc "g++ --version" | head -1
+g++ (Ubuntu/Linaro 4.6.4-1ubuntu1~12.04) 4.6.4
+\end{lstlisting}
+Based on this output and the information regarding the ABI change from \cite{gnu-dual-abi}, we inferred that the old ABI would need to be used when compiling programs for the DE1-SoC. For the GCC C++ compiler, this distinction would be made by providing the \texttt{-D\_GLIBCXX\_USE\_CXX11\_ABI=0} flag to the compiler \cite{redhat-c11-abi}.
+
+
+% % Description of serial connection no longer relevant
+%First, a serial connection was established with the DE1-SoC board. The provided mini-USB cable was used to connect the board to the Host computer, and the following command was used to determine the name of the TTY device associated with the UART-to-USB connection
+%\begin{lstlisting}[style=labreportstyle-sh]
+%$ dmesg | grep tty
+%\end{lstlisting}
+%It was determined the UART-to-USB connection was associated with \texttt{/dev/ttyUSB0}. A serial connection was then established using Putty as described in the manual \todo{cite manual page 6}. 
+
+
+
+\section*{Results and Analysis}
+
+
+\subsection*{Assignment 0}
+This assignment consisted of establishing a connection with the DE1-SoC board. An SSH connection was made with the board using the command
+\begin{lstlisting}[style=labreportstyle-sh]
+$ ssh ecee2160-de1soc
+\end{lstlisting}
+which evoked the SSH configuration provided in Listing~\ref{lst:ssh-config}. After running this command, a connection was successfully made as the root user on the DE1-SoC board.
+
+
+
+\subsection*{Assignment 1}
+This assignment consisted of writing a ``Hello World'' program in C++, which printed the string \texttt{Hello, World!} to the standard output. The program for this assignment is provided in Listing~\ref{lst:hello.cpp} below.
+
+\includecode{hello.cpp}
+
+This program was compiled and run using the following shell commands, which resulted in the given output.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+# --- Host computer ---
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra \        # Compile, link executable
+>     -D_GLIBCXX_USE_CXX11_ABI=0 \
+>     -o lab0-1-hello-arm ./hello.cpp
+$ scp ./lab0-1-hello-arm ecee2160-de1soc                    # Send to DE1-SoC board
+
+# --- DE1-SoC Board ---
+$ ./lab0-1-hello-arm                                        # Run executable
+Hello, World!
+\end{lstlisting}
+
+The program ran successfully and output the string \texttt{Hello, World!} as expected.
+
+\subsection*{Assignment 2}
+
+This assignment consisted of generating, printing, and sorting a fixed-length array of pseudo random integers. 
+
+The operations of printing and sorting an array were noted to be relevant to both this lab assignment and to lab assignment 3. To reduce code repetition between these two assignments, utility functions for these two tasks were placed in their own header-only library, \texttt{lab0\string_utils.h}, which is provided in Listing~\ref{lst:lab0\string_utils.h} below. This header library defined two functions:
+\begin{enumerate}
+    \item \texttt{print\string_iter()}, which allowed for the printing of a forward iterator \cite{cplusplus-header-iterator,cppreference-forward-iterator} to an arbitrary output stream; and
+    \item \texttt{selection\string_sort\string_array()}, which implemented the selection sort algorithm \cite{wiki:selection-sort} for sorting arrays of consecutive comparable elements in $O(1)$ space $O(n^2)$ time.
+\end{enumerate}
+Both of these functions were implemented as template functions so that they could be instantiated by the compiler to operate on either \texttt{int}s or \texttt{std::string}s, which were requirements for assignments 2 and 3, respectively.
+%It was noted that the basic operations of printing and sorting an array of consecutive elements were relevant to both lab assignment 2 and lab assignment 3. To reduce code repetition between these two assignments, the utility functions created for these tasks were placed in an independent header-only library file
+
+\includecode{lab0\string_utils.h}
+
+The program for generating, printing, and sorting a fixed-length array of pseudo random integers is provided in Listing~\ref{lst:array.cpp} below.
+
+
+\includecode{array.cpp}
+
+This assignment was compiled and run using the following shell commands. A short shell loop was used to repeatedly run the executable in order to demonstrate the random behavior of the program.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+# --- Host computer ---
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra \    # Compile, link executable
+>         -D_GLIBCXX_USE_CXX11_ABI=0 \
+>         -o lab0-2-array-arm ./array.cpp
+$ scp ./lab0-2-array-arm ecee2160-de1soc               # Send to DE1-SoC board
+
+# --- DE1-SoC Board ---
+$ for i in {1,2,3}                 # Run executable 3 times to demonstrate random behavior
+> do 
+>    echo "----- Trial $i -----";
+>    ./lab0-2-array-arm
+>    sleep 1                       # Sleep for one second to ensure the system clock changes
+> done
+----- Trial 1 -----
+Random integers from [0,99]:          58, 96, 50, 53, 19, 93, 43, 73, 36, 85
+Random integers from [0,99] (sorted): 19, 36, 43, 50, 53, 58, 73, 85, 93, 96
+----- Trial 2 -----
+Random integers from [0,99]:          75, 65, 61, 44, 96, 55, 8, 20, 14, 21
+Random integers from [0,99] (sorted): 8, 14, 20, 21, 44, 55, 61, 65, 75, 96
+----- Trial 3 -----
+Random integers from [0,99]:          89, 23, 34, 72, 24, 24, 72, 61, 94, 59
+Random integers from [0,99] (sorted): 23, 24, 24, 34, 59, 61, 72, 72, 89, 94
+\end{lstlisting}
+
+During each execution, a different sequence of integers from the interval $[0,99]$ was generated by the program. This verified the expected random behavior.
+
+\subsection*{Assignment 0.3}
+
+This assignment consisted of reading ten words from the standard input, sorting them alphabetically, and then printing the sorted words to the standard output. The program for this assignment is provided in Listing~\ref{lst:sort\string_strings.cpp} below. Note that this program uses the \texttt{lab0\string_utils.h} header library, which was discussed in the results for Assignment 0.2
+
+\includecode{sort\string_strings.cpp}
+
+This program was compiled and run using the following shell commands. A sequence of ten arbitrary words needed to be typed when prompted by the program.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+# --- Host computer ---
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra \    # Compile, link executable
+>     -D_GLIBCXX_USE_CXX11_ABI=0 \
+>     -o lab0-3-sort-strings-arm ./sort_strings.cpp
+$ scp ./lab0-3-sort-strings-arm ecee2160-de1soc         # Send to DE1-SoC board
+
+# --- DE1-SoC Board ---
+$ ./lab0-3-sort-strings-arm
+Enter 10 whitespace separated strings: bravo alpha banana asparagus charlie yotta apple zetta bool char
+Sorted Strings:
+=======================
+alpha,
+apple,
+asparagus,
+banana,
+bool,
+bravo,
+char,
+charlie,
+yotta,
+zetta
+
+\end{lstlisting}
+
+The program's output listed the strings in alphabetically order as expected.
+
+\section*{Conclusion}
+
+This lab established a procedure for preparing C++ executables that can be run on the DE1-SoC board's ARM processor. Common programming utilities including performing I/O, generating random numbers, and sorting data were implemented in C++ programs. The Secure Shell (SSH) protocol was used to remotely access a shell on the DE1-SoC board, and the \texttt{scp} program allowed for the transport of files to and from the board.
+
+The programs produced for this lab could be improved by further integrating the modern C++ standard library.  Specifically, in assignment 2, the C++11 \texttt{random} library could be used in place of the calls to the \texttt{std::rand()} function from the C standard library, which would allow for the generation of more uniformly distributed random numbers. Similarly, the \texttt{std::sort} function from the STL \texttt{algorithm} library could replace the implementation of selection sort in lab assignment 3. The algorithm used by the \texttt{std::sort()} function has an time complexity of $O(n\log n)$ \cite{cppreference-algorithm-sort}, which is asymptotically faster than the $O(n^2)$ time complexity exhibited by selection sort \cite{wiki:selection-sort}.
+
+
+\clearpage
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab0.bib}
+
+\bibliographystyle{unsrt}
+
+\end{document}
