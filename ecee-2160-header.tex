@@ -15,8 +15,9 @@
 \usepackage{caption}
 \usepackage[makeroom]{cancel}
 \usepackage[dvipsnames,table]{xcolor}
-\usepackage{enumitem}
+\usepackage[inline]{enumitem}
 \usepackage{esint}
+\usepackage{fancyhdr}
 \usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -27,6 +28,7 @@
 % does not work when using a times font in math mode.
 %\usepackage{mathptmx}
 \usepackage{mathtools}
+\usepackage{multicol}
 \usepackage{multirow}
 \usepackage{pgfplots}
 \usepackage{placeins} % For FloatBarrier
@@ -57,23 +59,31 @@
 
 \urlstyle{same} % Print URLs using the surroudning font instead of forcing monospace
 
+% Add headings from lab report template
+\pagestyle{fancy}
+\lhead{\LABauthor\\\LABcourse}
+\rhead{\LABcoursetitle\\Lab Assignment \LABnumber}
+\renewcommand*\contentsname{Summary}
+
 % Macro to generate the an IPL template style title page
 \newcommand{\makelabtitle}{
 \begin{titlepage}
     \begin{center}
-    \renewcommand{\baselinestretch}{1.5}
+    \renewcommand{\baselinestretch}{1.2}
     
     \includegraphics[width=\textwidth]{northeastern-header}\par
     
-    \vspace{0.4in}
+    \vspace{0.6in}
 
-    {\Large
+    {
+        \renewcommand{\baselinestretch}{1.2}
+        \Large
         \LABcourse\par
         \LABcoursetitle\par
         \LABsemester\par
     }
 
-    \vspace{0.4in}
+    \vspace{0.3in}
 
     {\LARGE\bfseries
         Report for Lab Assignment \LABnumber\par
@@ -83,24 +93,46 @@
         \fi
     }
     
-    \vspace{1.0in}
+    \vspace{0.3in}
     
-    {\Large \LABauthor\par
-        \ifx \LABpartner \undefined
+    {
+        \Large
+        \LABauthor\par
+        \ifx \LABauthoremail \undefined
         \else
-            \textbf{Lab Partner}: \LABpartner\\
+            \large \texttt{\LABauthoremail}\par
         \fi
-        \textbf{Instructor:} \LABinstructor\par
-        \LABdate\par
-     }
+    }
+
+    \vspace{0.4in}
+    
+    {
+        \large
+        \setlength{\tabcolsep}{4pt}
+        \begin{tabular}{>{\bfseries}rl}
+            Instructor:     & \LABinstructor\\
+            Due Date: 	    & \LABdatedue\\
+            Submitted:      & \LABdatesubmitted\\
+        \end{tabular}
+        
+    }
+
     \end{center}
     \vfill\null
-    \section*{Abstract}
-    \LABabstract
+    \begin{abstract}
+        \LABabstract
+    \end{abstract}
 \end{titlepage}
 }
 
-\titleformat{\section}{\normalfont\bfseries}{\thesection}{1em}{\underline{#1}}
+% Common defaults for lab report title page
+\def\LABcourse{ECEE 2160}
+\def\LABcoursetitle{Embedded Design: Enabling Robotics}
+\def\LABsemester{Summer 2 2020}
+\def\LABauthor{Brian Schubert}
+\def\LABauthoremail{schubert.b@northeastern.edu}
+\def\LABinstructor{Syed Shazli}
+
 
 % Notation Definitions
 \newcommand{\dd}[1]{\mathrm{d}#1}
@@ -146,7 +178,7 @@
 \lstdefinestyle{labreportstyle}{
     % Syntax highlighting
     basicstyle=\ttfamily\footnotesize,
-    backgroundcolor=\color{white},
+    backgroundcolor=\color{gray!5},
     commentstyle=\itshape\color{codecomment},
     keywordstyle=\bfseries\color{codekeyword},
     stringstyle=\bfseries\color{codestring},
@@ -165,10 +197,12 @@
     breakatwhitespace=true,
     % Frame settings
     frame=lines,
+%    frame=bottomline,
     % Misc
     captionpos=t,
     keepspaces=true,
-    %    numbersep=5pt,
+    xleftmargin=2mm,
+    framexleftmargin=2mm,
 }
 
 % C++ specific styling
@@ -177,6 +211,7 @@
     style=labreportstyle,
     directivestyle={\color{codedirective}},
     morekeywords={constexpr,nullptr}
+%    frame=bottomline,
 }
 
 % shell specific styling
