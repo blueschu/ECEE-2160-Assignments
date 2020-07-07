@@ -18,8 +18,8 @@
 #ifndef ECEE_2160_LAB_REPORTS_LAB0_UTILS_H
 #define ECEE_2160_LAB_REPORTS_LAB0_UTILS_H
 
-#include <iosfwd>           // for std::ostream - the full iostream header isn't
-                            // required since we only need the declarations.
+#include <iostream>         // for std::ostream - we can't use iosfwd since this
+                            // header includes definitions that write to ostream.
 #include <string_view>      // for std::string_view
 #include <utility>          // for std::swap
 
