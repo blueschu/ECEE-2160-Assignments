@@ -40,7 +40,7 @@ int main()
     selection_sort_array(input_strings.data(), input_strings.size());
 
     // Print the sorted strings to stdout.
-    std::cout << "Sorted Strings:\n=======================\n";
+    std::cout << "Sorted Strings:\n===============\n";
     print_iter(std::cout, input_strings.begin(), input_strings.end(), ",\n");
 
     std::cout << '\n';

@@ -50,14 +50,14 @@ The following software was installed on the host machine.
 
 This was the first lab for this course, so some initial setup was required to prepare the development environment for lab programs.
 
-For this course, we opted to pursue \emph{cross compilation} for preparing executables for the DE1-SoC. Cross compilation involves compiling a program for a different architecture than the one on which the compiler is running. For this lab, we needed to compile programs for an ARMv7 processor	from a host system with an Intel x86\_64 processor.
+For this course, we opted to pursue \emph{cross compilation} for creating executables for the DE1-SoC. Cross compilation involves compiling a program for a different architecture than the one on which the compiler is running. For this lab, we needed to compile programs for an ARMv7 processor	from a host system with an Intel x86\_64 processor.
 
 %writing and compiling a program on a host computer and then transferring the resulting executable to the target
 %
 %
 %Our cross compilation process involved writing and compiling C++ programs on a host computer and then transferring the resulting executable onto the DE1-SoC board. This process contrasted with one using \emph{native compilation}, which would have involved transferring the source code for programs onto the DE1-SoC and then compiling and running the program directly on the board.
 
-To facilitate cross compilation, a compiler for the DE1-SoC board's architecture (armhf) needed to be installed. This was accomplished by running the following commands on the host computer.
+To facilitate cross compilation, a compiler for the DE1-SoC board's architecture (armv7l) needed to be installed. This was accomplished by running the following commands on the host computer.
 \pagebreak[2] % Encourage breaking before listing
 \begin{lstlisting}[style=labreportstyle-sh]
 # --- Host computer --- 
@@ -146,7 +146,6 @@ The operations of printing and sorting an array were noted to be relevant to bot
     \item \texttt{selection\string_sort\string_array()}, which implemented the selection sort algorithm \cite{wiki:selection-sort} for sorting arrays of consecutive comparable elements in $O(1)$ space $O(n^2)$ time.
 \end{enumerate}
 Both of these functions were implemented as template functions so that they could be instantiated by the compiler to operate on either \texttt{int}s or \texttt{std::string}s, which were requirements for assignments 2 and 3, respectively.
-%It was noted that the basic operations of printing and sorting an array of consecutive elements were relevant to both lab assignment 2 and lab assignment 3. To reduce code repetition between these two assignments, the utility functions created for these tasks were placed in an independent header-only library file
 
 \includecode{lab0\string_utils.h}
 
@@ -203,7 +202,7 @@ $ scp ./lab0-3-sort-strings-arm ecee2160-de1soc         # Send to DE1-SoC board
 $ ./lab0-3-sort-strings-arm
 Enter 10 whitespace separated strings: bravo alpha banana asparagus charlie yotta apple zetta bool char
 Sorted Strings:
-=======================
+===============
 alpha,
 apple,
 asparagus,
