@@ -10,31 +10,29 @@
  *  - https://en.cppreference.com/w/cpp/io/basic_istream/ignore
  */
 
+#include <array>        // for std::array (used in menu)
 #include <iostream>     // for std::cout, std::cin
-#include <string_view>  // for std::string_view
 #include <limits>       // for std::numeric_limits
+#include <string_view>  // for std::string_view
 
 
 // Using anonymous namespace to given symbols internal linkage.
 namespace {
 
-/// The number of options in the menu.
-constexpr std::size_t PRELAB_MENU_CHOICES{5};
-
 /// Program menu from lab instructions.
-constexpr std::string_view PRELAB_MENU =
-    "Main menu\n\n"
-    "1. Print the array\n"
-    "2. Append element at the end\n"
-    "3. Remove list element\n"
-    "4. Insert one element\n"
-    "5. Exit\n";
+constexpr std::array<std::string_view, 5> PRELAB_MENU{
+    "Print the array",
+    "Append element at the end",
+    "Remove list element",
+    "Insert one element",
+    "Exit",
+};
 
 /**
  * Global variables for the properties of the lab vector.
  *
  * From lecture: these global variables may be substituted with a structure
- * after the prelab.
+ * or class after the prelab.
  */
 struct {
     double* values;
@@ -74,7 +72,7 @@ void run_program_loop();
  */
 int prompt_user_integer(std::string_view prompt);
 
-}
+} // end namespace
 
 int main()
 {
@@ -115,28 +113,23 @@ void finalize()
 void run_program_loop()
 {
     while (true) {
-        // Print menu with extra empty line.
-        std::cout << PRELAB_MENU << '\n';
+        // Print the menu from the lab instructions.
+        std::cout << "Main menu\n\n";
+        for (std::size_t i{0}; i < PRELAB_MENU.size(); ++i) {
+            std::cout << (i + 1) << ". " << PRELAB_MENU[i] << '\n';
+        }
+        std::cout << '\n';
 
         // Prompt user for menu selection.
         int user_selection = prompt_user_integer("Selection an option: ");
 
         // Menu selection logic implemented with switch per lab instructions.
         switch (user_selection) {
-            case 1: {
-                std::cout << "(print array)\n";
-                break;
-            }
-            case 2: {
-                std::cout << "(append element)\n";
-                break;
-            }
-            case 3: {
-                std::cout << "(remove element)\n";
-                break;
-            }
+            case 1:
+            case 2:
+            case 3:
             case 4: {
-                std::cout << "(insert element)\n";
+                std::cout << "You selected \"" << PRELAB_MENU[user_selection - 1] << "\"\n";
                 break;
             }
             case 5: {
@@ -147,10 +140,12 @@ void run_program_loop()
                 // Print and immediately flush error message.
                 std::cerr
                     << "Invalid selection - selection must be an integer from [0,"
-                    << PRELAB_MENU_CHOICES
+                    << PRELAB_MENU.size()
                     << std::endl;
             }
         }
+
+        std::cout << '\n';
 
     }
 }
