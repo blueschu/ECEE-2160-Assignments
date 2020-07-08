@@ -89,6 +89,7 @@ int main()
 
 // Internal definitions.
 namespace {
+
 void initialize()
 {
     constexpr std::size_t DEFAULT_SIZE{2};
@@ -114,7 +115,7 @@ void run_program_loop()
 {
     while (true) {
         // Print the menu from the lab instructions.
-        std::cout << "Main menu\n\n";
+        std::cout << "Main menu:\n\n";
         for (std::size_t i{0}; i < PRELAB_MENU.size(); ++i) {
             std::cout << (i + 1) << ". " << PRELAB_MENU[i] << '\n';
         }
@@ -139,9 +140,8 @@ void run_program_loop()
             default: {
                 // Print and immediately flush error message.
                 std::cerr
-                    << "Invalid selection - selection must be an integer from [0,"
-                    << PRELAB_MENU.size()
-                    << std::endl;
+                    << "Invalid selection - selection must be an integer from [1,"
+                    << PRELAB_MENU.size() << ']' << std::endl;
             }
         }
 
