@@ -122,7 +122,7 @@ void run_program_loop()
         std::cout << '\n';
 
         // Prompt user for menu selection.
-        int user_selection = prompt_user_integer("Selection an option: ");
+        int user_selection = prompt_user_integer("Select an option: ");
 
         // Menu selection logic implemented with switch per lab instructions.
         switch (user_selection) {

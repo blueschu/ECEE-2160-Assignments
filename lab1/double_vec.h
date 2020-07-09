@@ -54,7 +54,7 @@ class DoubleVec {
     using iterator = Elem*;
 
     /// Type for immutable iterators for this vector.
-    using const_iterator = Elem*;
+    using const_iterator = const Elem*;
 
     // Default constructor
     explicit DoubleVec(std::size_t size = DEFAULT_SIZE);
@@ -68,7 +68,7 @@ class DoubleVec {
      * Returns the number of elements that can be held in the currently
      * allocated memory.
      */
-    size_t size() const
+    std::size_t size() const
     {
         return m_size;
     }
@@ -76,7 +76,7 @@ class DoubleVec {
     /**
      * Returns the number of elements currently stored in this vector.
      */
-    size_t count() const
+    std::size_t count() const
     {
         return m_count;
     }

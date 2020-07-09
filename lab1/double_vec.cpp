@@ -8,14 +8,15 @@
 
 // https://en.cppreference.com/w/cpp/utility/optional
 // https://stackoverflow.com/questions/1952972/does-stdcopy-handle-overlapping-ranges
-
-#include "double_vec.h"
-
-#include <algorithm>
+// https://en.cppreference.com/w/cpp/error/out_of_range
 
 // When defined, debug info will be printed to the standard output whenever
 // a vector reallocates its storage.
 #define LAB_DEBUG
+
+#include "double_vec.h"
+
+#include <algorithm>
 
 // Include iostream only when debug info is required.
 #ifdef LAB_DEBUG
@@ -39,10 +40,7 @@ constexpr double SHRINK_MAX_DECREASE{0.5};
 DoubleVec::DoubleVec(std::size_t size)
     : m_size{size},
       m_count{0},
-      m_values{size ? new DoubleVec::Elem[size]{} : nullptr}
-{
-
-}
+      m_values{size ? new DoubleVec::Elem[size]{} : nullptr} {}
 
 DoubleVec::~DoubleVec()
 {
@@ -112,7 +110,7 @@ void DoubleVec::insert(std::size_t index, DoubleVec::Elem elem)
     //
     // copy_backwards only requires that the end of the output range does not
     // overlap with the input range, so this copy is safe.
-    std::copy_backward(begin() + index , end(), begin() + index + 1);
+    std::copy_backward(begin() + index, end(), begin() + index + 1);
 
     m_values[index] = elem;
     ++m_count;

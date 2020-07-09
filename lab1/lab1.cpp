@@ -24,8 +24,6 @@ using std::string_view_literals::operator ""sv;
 // Using anonymous namespace to given symbols internal linkage.
 namespace {
 
-void test() {}
-
 /// Program menu from lab instructions.
 constexpr auto PRELAB_MENU = std::array{
     "Print the array"sv,
@@ -87,7 +85,7 @@ void run_vector_interactive(DoubleVec& vec)
         std::cout << '\n';
 
         // Prompt user for menu selection.
-        auto user_selection = prompt_user<int>("Selection an option: ");
+        auto user_selection = prompt_user<int>("Select an option: ");
 
         // Menu selection logic implemented with switch per lab instructions.
         switch (user_selection) {
@@ -162,7 +160,7 @@ T prompt_user(const std::string_view prompt)
 std::ostream& operator<<(std::ostream& out, const DoubleVec& vec)
 {
     out << "[ ";
-    for (const auto& elem : vec) {
+    for (const auto elem : vec) {
         out << elem << ' ';
     }
     out << ']';
