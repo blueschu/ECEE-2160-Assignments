@@ -113,12 +113,11 @@ void run_vector_interactive(DoubleVec& vec)
                 auto index = prompt_user<std::size_t>("Enter the index of the new element: ");
                 auto new_element = prompt_user<double>("Enter the new element: ");
 
-                if (index > vec.count()) {
-                    std::cout
-                        << "Invalid index - index cannot exceed the length of the vector ("
-                        << vec.count() << ")\n";
-                } else {
+                try {
                     vec.insert(index, new_element);
+                } catch (const std::out_of_range& err) {
+                    std::cout << "Invalid index - " << err.what()
+                              << " (" << index << '>' << vec.count() << ")\n";
                 }
                 break;
             }

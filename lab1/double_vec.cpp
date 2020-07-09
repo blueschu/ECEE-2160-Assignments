@@ -98,10 +98,10 @@ std::optional<DoubleVec::Elem> DoubleVec::pop()
 
 void DoubleVec::insert(std::size_t index, DoubleVec::Elem elem)
 {
-    if (index > m_size) {
+    if (index > m_count) {
         // Behavior for inserting at indices outside of element count isn't
         // defined in the lab instructions.
-        throw std::invalid_argument("index cannot exceed vector length");
+        throw std::out_of_range("index cannot exceed vector length");
     }
 
     if (m_count + 1 > m_size) {
