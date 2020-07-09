@@ -13,6 +13,15 @@
 
 #include <algorithm>
 
+// When defined, debug info will be printed to the standard output whenever
+// a vector reallocates its storage.
+#define LAB_DEBUG
+
+// Include iostream only when debug info is required.
+#ifdef LAB_DEBUG
+#include <iostream>
+#endif
+
 /**
  * Ratio between vector size and vector capacity at which the vector should
  * be shrunk.
@@ -50,6 +59,10 @@ void DoubleVec::grow()
 
     std::copy(begin(), end(), new_values);
 
+#ifdef LAB_DEBUG
+    std::cout << "Growing vector from size=" << m_size << " to size=" << new_size << '\n';
+#endif
+
     delete[] m_values;
     m_values = new_values;
     m_size = new_size;
@@ -75,7 +88,8 @@ std::optional<DoubleVec::Elem> DoubleVec::pop()
         : std::nullopt;
 
     // Check if the element count has reached the shrinking threshold.
-    if (static_cast<double>(m_count) / m_size <= SHRINK_THRESHOLD) {
+    // Do not attempt to shrink if the vector size is zero.
+    if (m_size != 0 && static_cast<double>(m_count) / m_size <= SHRINK_THRESHOLD) {
         shrink();
     }
 
@@ -101,11 +115,15 @@ void DoubleVec::insert(std::size_t index, DoubleVec::Elem elem)
     std::copy_backward(begin() + index , end(), begin() + index + 1);
 
     m_values[index] = elem;
+    ++m_count;
 }
 
 void DoubleVec::shrink()
 {
     // Check if we can shrink the vector without losing elements.
+    //
+    // This check was not required by the lab instructions, but was added
+    // to ensure that this function can never remove elements from this vector.
     const std::size_t new_size = m_count >= m_size * SHRINK_MAX_DECREASE
         ? m_count                       // Shrink to m_count == m_size.
         : m_size * SHRINK_MAX_DECREASE; // Shrink m_size by the max decrease.
@@ -113,6 +131,10 @@ void DoubleVec::shrink()
     auto* const new_values = new DoubleVec::Elem[new_size];
 
     std::copy(begin(), end(), new_values);
+
+#ifdef LAB_DEBUG
+    std::cout << "Shrinking vector from size=" << m_size << " to size=" << new_size << '\n';
+#endif
 
     delete[] m_values;
     m_values = new_values;
