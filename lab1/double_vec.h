@@ -53,22 +53,65 @@ class DoubleVec {
     /// Type for mutable iterators for this vector.
     using iterator = Elem*;
 
+    /// Type for immutable iterators for this vector.
+    using const_iterator = Elem*;
+
     // Default constructor
     explicit DoubleVec(std::size_t size = DEFAULT_SIZE);
 
-    virtual ~DoubleVec();
+    // Destructor.
+    //
+    // Not declared virtual since inheritance is not expected.
+    ~DoubleVec();
 
+    /**
+     * Returns the number of elements that can be held in the currently
+     * allocated memory.
+     */
+    size_t size() const
+    {
+        return m_size;
+    }
+
+    /**
+     * Returns the number of elements currently stored in this vector.
+     */
+    size_t count() const
+    {
+        return m_count;
+    }
+
+    /**
+     * Adds the given element to the end of this vector.
+     *
+     * This function reallocates this vectors storage if the current storage
+     * is full.
+     * @param elem Element to be added.
+     */
     void append(Elem elem);
 
-    void grow();
-
-    // Minics the behavior of https://doc.rust-lang.org/std/vec/struct.Vec.html#method.pop
-
+    /**
+     * Removes the last element of this vector.
+     *
+     * This function mimics the behavior of the the std::Vec:pop function
+     * from the Rust standard library.
+     *
+     * https://doc.rust-lang.org/std/vec/struct.Vec.html#method.pop
+     *
+     * @return The last element, if it exists.
+     */
     std::optional<Elem> pop();
 
+    /**
+     * Inserts the given element at the the specified index in this vector.
+     *
+     * This function reallocates this vectors storage if the current storage
+     * is full
+     *
+     * @param index Location to insert the element.
+     * @param elem Element to be added.
+     */
     void insert(std::size_t index, Elem elem);
-
-    void shrink();
 
     /*
      * Move semantics were out of the scope of this lab.
@@ -86,24 +129,14 @@ class DoubleVec {
 
     /*
      * Iterator protocol definitions.
-     *
-     * We omit definitions for const iterators since they are not relevant to
-     * this lab.
      */
     iterator begin() { return m_values; }
 
     iterator end() { return m_values + m_count; }
 
+    const_iterator begin() const { return m_values; }
 
-    /*
-     * Indexing operators.
-     *
-     * We omit a definition for const indexing.
-     */
-
-    DoubleVec::Elem& operator[](std::size_t index) {
-        return m_values[index];
-    }
+    const_iterator end() const { return m_values + m_count; }
 
   private:
     /// Returns the size that this vector should have when it grows.
@@ -112,6 +145,19 @@ class DoubleVec {
         // Make sure the the size at least meets the default size.
         return std::max(DEFAULT_SIZE, m_size * 2);
     }
+
+    /**
+     * Increases the storage allocated by this vector.
+     */
+    void grow();
+
+    /**
+     * Reallocates this vector's storage to reduce its size.
+     *
+     * This function is guaranteed not to remove elements when shrinking the
+     * storage.
+     */
+    void shrink();
 
 };
 
