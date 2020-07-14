@@ -13,7 +13,6 @@
 #include <cstdint>      // for std::size_t
 #include <iosfwd>       // for std::ostream (no definitions)
 #include <utility>      // for std::pair
-#include <vector>       // for std::vector
 
 /**
  * A matrix with integer entries.

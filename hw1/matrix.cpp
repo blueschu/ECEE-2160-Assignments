@@ -5,6 +5,11 @@
  * Date:    2020-07-13
  * Due:     2020-07-17
  *
+ * References
+ * ==========
+ *
+ *  - https://en.cppreference.com/w/cpp/header/stdexcept
+ *
  */
 
 #include "matrix.h"
@@ -58,6 +63,7 @@ void IntMatrix::index_transpose_square()
     for (std::size_t i_row{1}; i_row < m_rows; ++i_row) {
         for (std::size_t i_col{0}; i_col < i_row; ++i_col) {
             std::swap(
+                // Call IntMatrix::operator[] to perform array indexing.
                 (*this)[{i_row, i_col}],
                 (*this)[{i_col, i_row}]
             );

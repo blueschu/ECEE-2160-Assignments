@@ -63,7 +63,6 @@
 \pagestyle{fancy}
 \lhead{\LABauthor\\\LABcourse}
 \rhead{\LABcoursetitle\\Lab Assignment \LABnumber}
-\renewcommand*\contentsname{Summary}
 
 % Macro to generate the an IPL template style title page
 \newcommand{\makelabtitle}{
@@ -88,7 +87,7 @@
     \vspace{0.3in}
 
     {\LARGE\bfseries
-        Report for Lab Assignment \LABnumber\par
+       \LABreportheading{} \LABnumber\par
         \ifx \LABtitle \undefined
         \else
             \LABtitle\par
@@ -120,10 +119,13 @@
     }
 
     \end{center}
-    \vfill\null
-    \begin{abstract}
-        \LABabstract
-    \end{abstract}
+    \ifx \LABabstract \undefined
+    \else
+        \vfill\null
+        \begin{abstract}
+            \LABabstract
+        \end{abstract}
+    \fi
 \end{titlepage}
 }
 
@@ -134,6 +136,7 @@
 \def\LABauthor{Brian Schubert}
 \def\LABauthoremail{schubert.b@northeastern.edu}
 \def\LABinstructor{Syed Shazli}
+\def\LABreportheading{Report for Lab Assignment}
 
 
 % Notation Definitions

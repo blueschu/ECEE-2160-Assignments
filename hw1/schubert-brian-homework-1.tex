@@ -1,0 +1,71 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{1}
+\def\LABdatedue{July 17th, 2020}
+\def\LABdatesubmitted{July 14th, 2020}
+
+
+\input{../ecee-2160-header-homework.tex}
+
+
+
+\begin{document}
+  \makelabtitle
+  
+\section*{Summary}
+The goal of this assignment was to implement two functions for computing the transpose of a $3$ by $3$ matrix: one that uses array indexing syntax, and one that uses explicit pointer arithmetic.
+
+During lecture, students were informed that the matrix structure in this assignment could be implemented as a class. This allowed for the use of RAII \cite{cppreference-raii} to simplify the management of memory dynamically allocated for matrix entries.
+
+Under the class model, the functions listed assignment instructions were implemented as the following member functions:
+\begin{itemize}
+    \item \texttt{indexTranspose()} was implemented as \texttt{IntMatrix::index\_transpose\_square()}
+    \item \texttt{pointerTranspose()} was implemented as \texttt{IntMatrix::pointer\_transpose\_square()}
+\end{itemize}
+
+The tasks of reading matrix entries from the standard input and writing matrices to the standard output were accomplished by overloading the input and output stream operators for the custom matrix class. 
+
+
+
+\section*{Submission}
+
+This assignment was compiled and tested on the COE virtual lab \cite{coe-vlab} with the following shell command\footnote{This assignment uses some C++11 language features, so a minimum a language flag of \texttt{-std=c++11} needed to be provided when invoking the compiler. We opted to use the most modern language flag supported by the compiler, which was the partial C++14 flag \texttt{-std=c++1y}.}. User input was provided when prompted. Note that the underbraces in the listing below indicate TAB characters (ASCII \texttt{0x09}).
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++1y -Wall -Wextra -o hw1 hw1.cpp matrix.cpp
+$ ./hw1
+Please enter a whitespace-delimited 3 by 3 matrix:
+1 2 3
+4 5 6
+7 8 9
+Original matrix:
+1		2		3
+4		5		6
+7		8		9
+
+Applying transpose using array index syntax:
+1		4		7
+2		5		8
+3		6		9
+
+Applying transpose using manual pointer arithmetic:
+1		2		3
+4		5		6
+7		8		9
+\end{lstlisting}
+
+
+
+
+\includecode{hw1.cpp}
+
+\includecode{matrix.h}
+
+\includecode{matrix.cpp}
+  
+
+\bibliography{./ecee-2160-hw-1.bib}
+\bibliographystyle{unsrt}
+  
+\end{document}
