@@ -23,7 +23,7 @@ namespace {
 constexpr std::array<std::string_view, 5> PRELAB_MENU{
     "Print the array",
     "Append element at the end",
-    "Remove list element",
+    "Remove last element",
     "Insert one element",
     "Exit",
 };

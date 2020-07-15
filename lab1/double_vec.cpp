@@ -4,11 +4,15 @@
  * Author:  Brian Schubert
  * Date:    2020-07-08
  *
+ * References
+ * ==========
+ *
+ *  - https://en.cppreference.com/w/cpp/utility/optional
+ *  - https://stackoverflow.com/questions/1952972/does-stdcopy-handle-overlapping-ranges
+ *  - https://en.cppreference.com/w/cpp/header/stdexcept
+ *
  */
 
-// https://en.cppreference.com/w/cpp/utility/optional
-// https://stackoverflow.com/questions/1952972/does-stdcopy-handle-overlapping-ranges
-// https://en.cppreference.com/w/cpp/error/out_of_range
 
 // When defined, debug info will be printed to the standard output whenever
 // a vector reallocates its storage.
@@ -16,11 +20,13 @@
 
 #include "double_vec.h"
 
-#include <algorithm>
+#include <algorithm>        // for std::copy{,_backward}
+#include <stdexcept>        // for std::out_of_range
 
 // Include iostream only when debug info is required.
 #ifdef LAB_DEBUG
-#include <iostream>
+#include <iostream>         // for std::cout
+
 #endif
 
 /**
@@ -40,6 +46,7 @@ constexpr double SHRINK_MAX_DECREASE{0.5};
 DoubleVec::DoubleVec(std::size_t size)
     : m_size{size},
       m_count{0},
+    // Only allocate memory if a non-zero size was provided.
       m_values{size ? new DoubleVec::Elem[size]{} : nullptr} {}
 
 DoubleVec::~DoubleVec()
@@ -79,15 +86,16 @@ void DoubleVec::append(DoubleVec::Elem elem)
 std::optional<DoubleVec::Elem> DoubleVec::pop()
 {
     // Check if there is an element to pop.
-    std::optional<DoubleVec::Elem> result = m_count > 0
+    auto result = m_count > 0
         // Get last element and decrease count.
         ? std::make_optional(m_values[--m_count])
         // Return empty value sentinel.
         : std::nullopt;
 
-    // Check if the element count has reached the shrinking threshold.
-    // Do not attempt to shrink if the vector size is zero.
-    if (m_size != 0 && static_cast<double>(m_count) / m_size <= SHRINK_THRESHOLD) {
+    // If an element was removed, check if the element count has reached the
+    // shrinking threshold.
+    // m_size cannot be zero if an element was removed.
+    if (result && static_cast<double>(m_count) / m_size <= SHRINK_THRESHOLD) {
         shrink();
     }
 
@@ -110,7 +118,7 @@ void DoubleVec::insert(std::size_t index, DoubleVec::Elem elem)
     //
     // copy_backwards only requires that the end of the output range does not
     // overlap with the input range, so this copy is safe.
-    std::copy_backward(begin() + index, end(), begin() + index + 1);
+    std::copy_backward(begin() + index, end(), end() + 1);
 
     m_values[index] = elem;
     ++m_count;

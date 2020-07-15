@@ -9,16 +9,14 @@
 #ifndef ECEE_2160_LAB_REPORTS_DOUBLE_VEC_H
 #define ECEE_2160_LAB_REPORTS_DOUBLE_VEC_H
 
-#include <cstddef>
-#include <optional>
+#include <cstddef>      // for std::size_t
+#include <optional>     // for std::optional
 
 /**
  * Vector implementation specialized for doubles.
  *
- * Non-goals in this implementation:
- *
- *  - Move semantics
- *  - Exception safety
+ * This implementation does not attempt to address move semantics of exception
+ * safety.
  */
 class DoubleVec {
 
@@ -27,11 +25,6 @@ class DoubleVec {
 
     /// Default value for a vector's size.
     constexpr inline static std::size_t DEFAULT_SIZE{2};
-
-    /**
-     * The elements stored by this vector
-     */
-    Elem* m_values;
 
     /**
      * The number of elements that can be held in the currently allocated
@@ -47,6 +40,11 @@ class DoubleVec {
      * This member variable is analogous to `std::vector::size`.
      */
     std::size_t m_count;
+
+    /**
+     * The elements stored by this vector
+     */
+    Elem* m_values;
 
   public:
 
@@ -67,6 +65,8 @@ class DoubleVec {
     /**
      * Returns the number of elements that can be held in the currently
      * allocated memory.
+     *
+     * Runs in O(1) time.
      */
     std::size_t size() const
     {
@@ -75,6 +75,8 @@ class DoubleVec {
 
     /**
      * Returns the number of elements currently stored in this vector.
+     *
+     * Runs in O(1) time.
      */
     std::size_t count() const
     {
@@ -87,6 +89,9 @@ class DoubleVec {
      * This function reallocates this vectors storage if the current storage
      * is full.
      * @param elem Element to be added.
+     *
+     * Runs in amortized O(1) time. O(n) time is observed when reallocation is
+     * required.
      */
     void append(Elem elem);
 
@@ -94,9 +99,12 @@ class DoubleVec {
      * Removes the last element of this vector.
      *
      * This function mimics the behavior of the the std::Vec:pop function
-     * from the Rust standard library.
+     * from the Rust standard library (*).
      *
-     * https://doc.rust-lang.org/std/vec/struct.Vec.html#method.pop
+     * Runs in amortized O(1) time. O(n) time is observed when reallocation is
+     * required.
+     *
+     * (*): https://doc.rust-lang.org/std/vec/struct.Vec.html#method.pop
      *
      * @return The last element, if it exists.
      */
@@ -106,7 +114,9 @@ class DoubleVec {
      * Inserts the given element at the the specified index in this vector.
      *
      * This function reallocates this vectors storage if the current storage
-     * is full
+     * is full.
+     *
+     * Runs in O(n) time.
      *
      * @param index Location to insert the element.
      * @param elem Element to be added.

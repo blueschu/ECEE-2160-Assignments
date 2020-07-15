@@ -4,11 +4,12 @@
  * Author:  Brian Schubert
  * Date:    2020-07-08
  *
+ *
+ * References
+ * ==========
+ *
+ *  -  https://en.cppreference.com/w/cpp/string/basic_string_view/operator%22%22sv
  */
-
-
-// http://www.cplusplus.com/reference/typeinfo/type_info/name/
-// cpp reference strings views
 
 
 #include "double_vec.h"
@@ -28,7 +29,7 @@ namespace {
 constexpr auto PRELAB_MENU = std::array{
     "Print the array"sv,
     "Append element at the end"sv,
-    "Remove list element"sv,
+    "Remove last element"sv,
     "Insert one element"sv,
     "Exit"sv,
 };
@@ -90,7 +91,7 @@ void run_vector_interactive(DoubleVec& vec)
         // Menu selection logic implemented with switch per lab instructions.
         switch (user_selection) {
             case 1: { // Print array
-                std::cout << vec;
+                std::cout << vec << '\n';
                 break;
             }
             case 2: { // Append element
@@ -120,7 +121,7 @@ void run_vector_interactive(DoubleVec& vec)
                 break;
             }
             case 5: { // Exit
-                std::cout << "Exiting...";
+                std::cout << "Exiting...\n";
                 return;
             }
             default: {
@@ -143,10 +144,10 @@ T prompt_user(const std::string_view prompt)
     while (true) {
         std::cout << prompt;
         // operator>>(std::istream&, T) returns false on input failure.
+        // We assume EOF will not be reached.
         if (!(std::cin >> user_selection)) {
             // Print and immediately flush error message.
-            std::cout << "Invalid selection - input must be a valid GCC type '"
-                      << typeid(T).name() << "'" << std::endl;
+            std::cout << "Invalid input" << std::endl;
             // Clear the error
             std::cin.clear();
             // Empty the input stream until a newline character is found.
