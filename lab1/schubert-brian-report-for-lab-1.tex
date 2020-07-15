@@ -1,0 +1,530 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{1}
+\def\LABtitle{Dynamically Growing Arrays in C++}
+\def\LABdatedue{July 15th, 2020}
+\def\LABdatesubmitted{July 15th, 2020}
+\def\LABabstract{\small This lab served as an introduction to dynamic memory management in C++. A dynamically growing array, or ``vector,'' data structure was implemented, and a short interactive program was written to test the data structure's behavior. The C++ keywords \texttt{new} and \texttt{delete} were used to perform manual memory allocations.}
+%This lab served as an introduction to GNU/Linux and to the DE1-SoC embedded computing device. Basic C++ programs were created and compiled for the ARM processor on the DE1-SoC using the GNU Compiler Collection's C++ compiler. These programs were executed remotely on the DE1-SoC over an SSH (Secure Shell) connection.
+
+\input{../ecee-2160-header.tex}
+
+\begin{document}
+\makelabtitle
+
+\section*{Introduction}
+
+This lab was an introduction to dynamic memory management in C++. A dynamic array, or ``vector'', data structure was implemented using the C++ memory allocation keywords \texttt{new} and \texttt{delete}. Basic functions for adding to and removing elements from the vector were implemented, and procedures for automatically reallocating the vector's storage as its size was increased or decreased were introduced. Familiarity with modern techniques for resourse handling in C++, such as RAII and move semantics, was not assumed.
+
+\section*{Lab Discussion} 
+A host machine running a GNU/Linux operating system\footnote{Linux Mint 19.3, ker. 4.15.0, arch. x86\_64.}  was used to complete this lab. All programs were compiled using the GNU Compiler Collection (GCC) C++ compiler version 7.5.0.
+
+The prelab component of this lab consisted of preparing an interactive menu program that could be used to test a vector implementation during the lab. This program is provided in Listing~\ref{lst:prelab.cpp} in the Appendix. 
+
+The prelab program was compiled and tested with the following shell session. User inputs were provided as requested by the program.
+
+
+\begin{multicols}{2}
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++17 -Wall -Wextra \
+>    -o lab1-prelab ./prelab.cpp
+$ ./lab1-prelab
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1
+You selected "Print the array"
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2
+You selected "Append element at the end"
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3
+You selected "Remove last element"
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4
+You selected "Insert one element"
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 10
+Invalid selection - selection must be an integer from [1,5]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: A
+Invalid selection - input must be an integer
+Select an option: 5
+Exiting...
+\end{lstlisting}
+\end{multicols}
+
+
+After the pre-lab component was completed, students were informed that the global variables used to represent the dynamic structure could be replaced by a class. This allowed for the use of RAII \cite{cppreference-raii} to simplify the management of the dynamically allocated memory. Using the class model, the functions \texttt{initialize()} and \texttt{finalize()} were replaced by a constructor and destructor, respectively, and the vector-manipulating functions were implemented as member functions.
+
+
+\section*{Results and Analysis}
+
+We defined the class \texttt{DoubleVec} to implement the vector interface specified in the lab instructions. The components of this class can be found in Listings~\ref{lst:double\string_vec.h} and~\ref{lst:double\string_vec.cpp}. All I/O operations were handled by the functions \texttt{run\_vector\_interactive()} and \texttt{prompt\_user()}, which are defined in Listing~\ref{lst:lab1.cpp}. The complete sources for this lab were compiled using the following shell command.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++17 -Wall -Wextra -o lab1 ./lab1.cpp ./double_vec.cpp
+\end{lstlisting}
+
+
+
+\subsection*{Assignment 1}
+
+This assignment consisted of creating a function that would increase the capacity of the vector while retaining all stored elements. This functionality was implemented by \texttt{DoubleVec::grow()}, which is provided in Listing~\ref{lst:double\string_vec.cpp} in the Appendix. The behavior of this function is demonstrated in Assignments~2, 4, and~5 of this report.
+
+\subsection*{Assignment 2}
+
+This assignment involved writing two functions: one that could append elements to the end of the vector, and another that could print the vector's contents to the standard output. The former was implemented as \texttt{DoubleVec::append()}, which is included in Listing~\ref{lst:double\string_vec.cpp}, while the latter was implemented by overloading the output stream operator for the \texttt{DoubleVec} class. 
+
+
+The task of prompting the user for an element to append to the vector was handled by the function \texttt{prompt\_user()}, which can be found in Listing~\ref{lst:lab1.cpp}.
+
+These functions were tested with the following interactive session. Remarks are included on the right hand side after a \texttt{\#} character.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ ./lab1
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                                     # Print empty vector
+[ ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                                     # Add first element
+Enter the new element: 1.2
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                                     # Add second element
+Enter the new element: 2.3
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2
+Enter the new element: 3.4                              # Add third element
+Growing vector from size=2 to size=4                    # Vector storage reallocated
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                                     # Print vector contents
+[ 1.2 2.3 3.4 ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 5                                     # Exit program
+Exiting...
+\end{lstlisting}
+The output of this program shows that the three element insertions were successful. During the third insertion, the debug output signaled that a reallocation occurred to increase the vector's capacity from 2 element to 4 elements. These observations corroborated the expected behavior of the program.
+
+
+\subsection*{Assignment 3} 
+This assignment consisted of implementing a function to remove elements from the end of the vector. When implementing this function, we took inspiration from the \texttt{Vec::pop} function in the Rust language's standard library \cite{rust-vec}, which removes an element from the vector structure and returns the element wrapped in an ``optional-value'' container\footnote{The C++ analog for this container is \texttt{std::optional}, which was introduced in the C++17 standard \cite{cppreference-optional}.}. Our implementation, \texttt{DoubleVec::pop()}, is provided in Listing~\ref{lst:double\string_vec.cpp}.
+
+The function \texttt{DoubleVec::pop()} was tested with the following interactive session. Remarks are indicated with a \texttt{\#} character.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ ./lab1
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                         # Add an element to the vector
+Enter the new element: 7
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3                         # Remove the element
+Shrinking vector from size=2 to size=1      # (1)
+Removed 7
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3                         # Attempt to remove element from empty vector
+Cannot remove element - vector is empty     # (2)
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 5                         # Exit program
+Exiting...
+\end{lstlisting}
+
+During the removal marked by \texttt{(1)} above, the vector was non-empty and an element was successfully extracted from the vector. In contrast, during the removal marked \texttt{(2)}, the vector had no stored elements, so an error message was printed. Both of these results matched the expected behavior for the data structure.
+
+\subsection*{Assignment 4}
+
+This assignment consisted of writing a function to insert an element at an arbitrary index bounded by the length of the vector. For a vector of length $n$, the function would accept integer indices from the interval $[0,n]$. Invalid indices would result in an error. This function was implemented as \texttt{DoubleVec::insert()}, which is provided in Listing~\ref{lst:double\string_vec.cpp}.
+
+The task of prompting the user for an index and element for insertion was handled by the function \texttt{prompt\_user()}, which can be found in Listing~\ref{lst:lab1.cpp}.
+
+The function \texttt{DoubleVec::insert()} was tested with the following interactive session. Remarks are included on the right hand side after a \texttt{\#} character.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ ./lab1
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4                             # Insert '1' at index 0
+Enter the index of the new element: 0
+Enter the new element: 1
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4                             # Insert '2' at index 0
+Enter the index of the new element: 0
+Enter the new element: 2
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                             # Show vector contents
+[ 2 1 ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4                             # Insert '3' at index 1
+Enter the index of the new element: 1
+Enter the new element: 3
+Growing vector from size=2 to size=4            # (*)
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                             # Show vector contetns
+[ 2 3 1 ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4                             # Insert '4' at the vector's end
+Enter the index of the new element: 3
+Enter the new element: 4
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                             # Show vector contents
+[ 2 3 1 4 ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 4                             # Attempt to insert an element outside 
+Enter the index of the new element: 10          # the vector's bounds
+Enter the new element: 123
+Invalid index - index cannot exceed vector length (10>4)
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 5
+Exiting...
+\end{lstlisting}
+
+As shown in the program output above, calling \texttt{DoubleVec::insert()} with both endpoint and intermediate indices resulted in the correct placement of the new element. When provided with an index that exceeded the length of the vector, an error was raised. In the case where the vector's capacity was full at the time of insertion, the internal storage was reallocated, as shown by the line marked with \texttt{(*)}. These results matched the expected behavior.
+
+
+\subsection*{Assignment 5}
+
+This assignment consisted of creating a function that would reduce the capacity of the vector while retaining all stored elements. This function was implemented by \texttt{DoubleVec::shrink()}, which is included in Listing~\ref{lst:double\string_vec.cpp}. This function was automatically called upon the removal of an element that left the vector with less than 30\% of its storage in use.
+
+The function \texttt{DoubleVec::shrink()} was tested with the following interactive session. Remarks are included on the right hand side after a \texttt{\#} character.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ ./lab1
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                             # Append '1' (count=1, size=2)
+Enter the new element: 1
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                             # Append '2' (count=2, size=2)
+Enter the new element: 2
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                             # Append '3' (count=3, size=4)
+Enter the new element: 3
+Growing vector from size=2 to size=4
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                             # Append '4' (count=4, size=4)
+Enter the new element: 4
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 2                             # Append '5' (count=5, size=8)
+Enter the new element: 5
+Growing vector from size=4 to size=8
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 1                             # Print vector contents
+[ 1 2 3 4 5 ]
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3                             # Pop an element (count=4, size=8)
+Removed 5
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3                             # Pop an element (count=3, size=8)
+Removed 4
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 3                             # Pop an element (count=2, size=4)
+Shrinking vector from size=8 to size=4          # (*)
+Removed 3
+
+Main menu:
+
+1. Print the array
+2. Append element at the end
+3. Remove last element
+4. Insert one element
+5. Exit
+
+Select an option: 5
+Exiting...
+\end{lstlisting}
+
+In the demonstrative session above, the vector reached a maximum storage capacity of 8 elements with 5 elements being stored. Elements were repeatedly removed from the end of the vector until then number of stored elements reached 2. Upon the last removal, the percent of storage used in the vector dropped to 25\%, which was below the 30\% threshold specified in the lab instructions. As indicated by the line marked \texttt{(*)}, this removal resulted in the automatic reallocation of the vector storage to half of its previous capacity. This result agreed with the expected behavior.
+
+
+\section*{Conclusion}
+
+This lab illustrated a common use case for dynamic memory management with the implementation of a variable sized array, also known as a vector. Utility functions for adding elements to and removing elements from a vector were implemented, along with procedures to expanding and shrinking the internal storage of the vector. Common issues with performing dynamic memory allocations such as memory leaks and resource exhaustion were considered. By partially employing the C++ programming technique of RAII \cite{cppreference-raii}, the resource safety of the data structure was improved.
+
+The vector implementation from this lab could be improved by introducing user-defined copy and move constructors, along with the corresponding assignment operators. These additions would increase the versatility of the data structure since they would allow users to duplicate the structure without manually constructing a new instance element-by-element.
+
+
+
+\clearpage
+\section*{Appendix}
+\renewcommand{\thelstlisting}{A.\arabic{lstlisting}}
+
+\includecode{prelab.cpp}
+Referenced \cite{cppreference-ignore}.
+
+\includecode{lab1.cpp}
+
+\includecode{double\string_vec.h}
+Referenced \cite{cppreference-sv-literals}.
+
+\includecode{double\string_vec.cpp}
+Referenced \cite{cppreference-optional,so-std-copy-overlap,cppreference-stdexcept}.
+
+
+
+\clearpage
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab1.bib}
+
+\bibliographystyle{unsrt}
+
+\end{document}
