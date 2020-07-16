@@ -24,23 +24,16 @@
 template<typename T>
 typename LinkedList<T>::iterator LinkedList<T>::insert(LinkedList::iterator position, T value)
 {
+    // Create a new node which takes ownership of the current next node.
+    auto new_node = std::unique_ptr<BaseNode>(new Node{
+        std::move(position.m_iter_pos->m_next_ptr),
+        value
+    });
 
-    if (position == end()) {
-        position = std::unique_ptr<Node>(new Node{
-            value,
-            nullptr
-        });
+    // Give ownership of the new node to the current node.
+    std::swap(position.m_iter_pos->m_next_ptr, new_node);
 
-    } else {
-        auto new_node = std::unique_ptr<Node>(new Node{
-            value,
-            nullptr
-        });
+    // new_node no longer owns any memory
 
-        position.pos->next = std::move(new_node);
-    }
-
-
-
-    return iterator{position.pos->next.get()};
+    return position.next();
 }

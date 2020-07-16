@@ -8,11 +8,18 @@
 
 #include "linked_list.h"
 
+#include <iostream>
+
 int main() {
 
     LinkedList<int> z{};
-
-    auto it = z.begin();
-
+//
+    auto it = z.before_begin();
+//
     z.insert(it, 7);
+
+    for(auto elem : z) {
+        std::cout << elem << ' ';
+    }
+    std::cout << '\n';
 }

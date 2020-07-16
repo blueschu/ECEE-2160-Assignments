@@ -40,13 +40,13 @@ class LinkedList {
      */
     struct BaseNode {
         /// Owning pointer to the next node.
-        std::unique_ptr<BaseNode> next;
+        std::unique_ptr<BaseNode> m_next_ptr;
     };
 
     /// Helper class representing a link in the linked list.
     struct Node : public BaseNode {
         /// The value contained in this node.
-        T value;
+        T m_value;
     };
 
     /**
@@ -54,8 +54,7 @@ class LinkedList {
      *
      *  The pointer will be nullptr when the list is empty.
      */
-
-    std::unique_ptr<Node> head{nullptr};
+    BaseNode m_head{nullptr};
 
   public:
     /**
@@ -72,7 +71,7 @@ class LinkedList {
          * always be the case except in the events where this iterator is
          * represents a position directly before or after the list.
          */
-        BaseNode* pos;
+        BaseNode* m_iter_pos{nullptr};
 
         /*
          * Standard aliases for iterator traits
@@ -80,8 +79,14 @@ class LinkedList {
         using value_type = T;
         using pointer = T*;
         using reference = T&;
-        using difference_type = ptrdiff_t;
+        using difference_type = std::ptrdiff_t;
         using iterator_category = std::forward_iterator_tag;
+
+        // Default constructor.
+        iterator() noexcept = default;
+
+        // Construct an iterator from a base node pointer.
+        explicit iterator(BaseNode* base) noexcept: m_iter_pos{base} {}
 
         /**
          * Helper function for computing the iterator for the next element in
@@ -89,29 +94,36 @@ class LinkedList {
          *
          * @return Iterator to next element.
          */
-        iterator next() const noexcept {
-            return pos ? pos->next : nullptr;
+        iterator next() const noexcept
+        {
+            // If this iterator does not is not a nullptr (i.e. end iterator),
+            // return an iterator to the node that follows the current node.
+            return iterator(m_iter_pos ? m_iter_pos->m_next_ptr.get() : nullptr);
         }
 
         /*
          * Dereferencing operator overload.
          * We assume that this iterator points a valid node.
          */
-        reference operator*() noexcept { return static_cast<Node*>(pos)->value; }
+        reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
-        pointer operator->() noexcept { return static_cast<Node*>(pos)->value; }
+        pointer operator->() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
-        bool operator==(iterator other) const noexcept { return pos == other.pos; }
+        /*
+         * Comparison operators
+         */
+        bool operator==(iterator other) const noexcept { return m_iter_pos == other.m_iter_pos; }
 
         bool operator!=(iterator other) const noexcept { return !(*this == other); }
 
+        // Post-increment overload.
         iterator& operator++() noexcept
         {
-            // We assume that operator++ will not be called on an end node.
-            pos = pos->next;
+            m_iter_pos = m_iter_pos->m_next_ptr.get();
             return *this;
         }
 
+        // Post-increment overload.
         iterator operator++(int) noexcept
         {
             auto temp = *this;
@@ -127,11 +139,36 @@ class LinkedList {
 
 
   public:
-    iterator begin()
+
+    /**
+     * Returns an iterator that represents an entry just before the beginning
+     * of the list.
+     *
+     * This technique was discovered by examining the implementation of
+     * std::forward_list.
+     *
+     * @return Iterator before the beginning of this list.
+     */
+    iterator before_begin()
     {
-        return iterator{head.get()};
+        return iterator{&m_head};
     }
 
+    /**
+     * Returns an iterator representing the first element in this list.
+     *
+     * @return First element interator.
+     */
+    iterator begin()
+    {
+        return iterator{m_head.m_next_ptr.get()};
+    }
+
+    /**
+     * Returns an iterator representing the end of this list.
+     *
+     * @return End interator.
+     */
     iterator end()
     {
         return iterator{nullptr};
