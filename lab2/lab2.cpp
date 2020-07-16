@@ -131,6 +131,7 @@ void run_list_interactive(LinkedList<Person>& list)
             case 2: { // Find a person.
                 auto needle_id = prompt_user<int>("Enter the ID to search for: ");
 
+                // Search for person in O(n) time.
                 auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
                     return p.id == needle_id;
                 });
@@ -146,6 +147,7 @@ void run_list_interactive(LinkedList<Person>& list)
             case 3: { // Remove a person.
                 auto needle_id = prompt_user<int>("Enter the ID of the person to delete: ");
 
+                // Search for person in O(n) time.
                 auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
                     return p.id == needle_id;
                 });
@@ -156,6 +158,7 @@ void run_list_interactive(LinkedList<Person>& list)
                     // the element one slot prior.
                     auto removal_iter = list.before_begin();
                     // Advance the iterator to just before the element to remove.
+                    // Runs in O(n) time.
                     std::advance(removal_iter, std::distance(list.begin(), loc));
                     list.remove_after(removal_iter);
                 } else {

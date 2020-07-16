@@ -176,7 +176,7 @@ class LinkedList {
      *
      * @return Iterator before the beginning of this list.
      */
-    iterator before_begin()
+    iterator before_begin() noexcept
     {
         return iterator{&m_head};
     }
@@ -186,7 +186,7 @@ class LinkedList {
      *
      * @return First element iterator.
      */
-    iterator begin()
+    iterator begin() noexcept
     {
         return iterator{m_head.m_next_ptr.get()};
     }
@@ -194,9 +194,9 @@ class LinkedList {
     /**
      * Returns an iterator representing the end of this list.
      *
-     * @return End interator.
+     * @return End iterator.
      */
-    iterator end()
+    iterator end() noexcept
     {
         return iterator{nullptr};
     }
@@ -220,6 +220,8 @@ class LinkedList {
      *
      * This function is named after the analogous function in std::forward_list.
      *
+     *  Runs in O(1) time.
+     *
      * @param value Element to be inserted.
      */
     void push_front(const T& value);
@@ -228,6 +230,8 @@ class LinkedList {
      * Removes the elements immediately following the given position.
      *
      * This function is analogous to std::forward_iterator::erase_after().
+     *
+     *  Runs in O(1) time.
      *
      * @param position Iterating preceding the element to be removed.
      */
