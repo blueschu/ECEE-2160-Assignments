@@ -1,6 +1,3 @@
-
-#include "linked_list.h"
-
 /*
  * ECEE 2160 Lab Assignment 2 linked list definitions.
  *

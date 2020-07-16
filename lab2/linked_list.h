@@ -13,6 +13,8 @@
  *  [4] https://en.cppreference.com/w/cpp/named_req/ForwardIterator
  *  [5] https://stackoverflow.com/a/38103394
  *  [6] https://en.cppreference.com/w/cpp/iterator/iterator_traits
+ *  [7] https://en.cppreference.com/w/cpp/language/rule_of_three
+ *  [8] https://en.cppreference.com/w/cpp/utility/exchange
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_LINKED_LIST_H
@@ -134,25 +136,36 @@ class LinkedList {
 
     };
 
-
   public:
 
     // Default constructor.
     LinkedList() = default;
 
     /*
-     * Move semantics were out of the scope of this lab.
+     * Copy assignment and constructors were not necessary for this assignment.
      *
      * To prevent accidents, we explicitly disallow the compiler from generating
-     * definitions for {copy,move} {constructors, assignment operators}.
+     * them
      */
     LinkedList(const LinkedList&) = delete;
 
-    LinkedList(LinkedList&&) = delete;
-
     LinkedList& operator=(const LinkedList&) = delete;
 
-    LinkedList& operator=(LinkedList&&) = delete;
+    /*
+     * Move constructor and assignment.
+     *
+     * Moves are required in our implementation of the extra credit portion
+     * of this lab.
+     */
+    // Move constructor [7].
+    LinkedList(LinkedList&& other) noexcept
+        : m_head(std::exchange(other.m_head, nullptr)) {}
+
+    // Move assignment.
+    LinkedList& operator=(LinkedList&& other) noexcept
+    {
+        std::swap(m_head, other.m_head);
+    }
 
     /**
      * Returns an iterator that represents an entry just before the beginning
