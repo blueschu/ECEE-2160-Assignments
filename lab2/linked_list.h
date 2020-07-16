@@ -105,8 +105,8 @@ class LinkedList {
         }
 
         /*
-         * Dereferencing operator overload.
-         * We assume that this iterator points a valid node.
+         * Dereference operator overload.
+         * We assume that this iterator points a valid Node (not a BaseNode).
          */
         reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 

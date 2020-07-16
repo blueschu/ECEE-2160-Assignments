@@ -9,16 +9,20 @@
  *
  *  - https://en.cppreference.com/w/cpp/algorithm/find
  *  - https://en.cppreference.com/w/cpp/iterator/advance
+ *  - https://en.cppreference.com/w/cpp/algorithm/sort
+ *  - https://en.cppreference.com/w/cpp/container/vector/vector
+ *  - https://en.cppreference.com/w/cpp/algorithm/move
  *
  */
 
 #include "linked_list.h"
 
-#include <algorithm>    // for std::find
+#include <algorithm>    // for std::find, std::move
 #include <array>        // for std::array (used in menu)
 #include <iostream>     // for std::cout, std::cin
 #include <limits>       // for std::numeric_limits
 #include <string_view>  // for std::string_view
+#include <vector>       // for std::vector
 
 // For access to string view literals
 using std::string_view_literals::operator ""sv;
@@ -32,6 +36,7 @@ constexpr auto PRELAB_MENU = std::array{
     "Find a person"sv,
     "Remove a person"sv,
     "Print the list"sv,
+    "Sort the list"sv,
     "Exit"sv,
 };
 
@@ -81,6 +86,17 @@ std::ostream& operator<<(std::ostream& out, const Person& p);
  * constant iterator for this lab.
  */
 std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list);
+
+/**
+ * Sorts the given list based on the values returned by the given key
+ * selector callable.
+ *
+ * @tparam T List content type.
+ * @param list List to be sorted
+ * @param comparison_func The function to be used for comparing list elements.
+ */
+template<typename T, typename F>
+void sort_list(LinkedList<T>& list, F comparison_func);
 
 } // end namespace
 
@@ -171,7 +187,24 @@ void run_list_interactive(LinkedList<Person>& list)
                 std::cout << list << '\n';
                 break;
             }
-            case 5: { // Exit
+            case 5: { // Sort the list
+                std::cout << "Sort by\n 0) Name\n 1) Age\n";
+                // Only the strings "0" and "1" are accepted as valid bool
+                // inputs, so the user cannot select an invalid menu option.
+                auto selection = prompt_user<bool>("Selection: ");
+
+                if (selection == 0) {
+                    sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
+                        return lhs.name > rhs.name;
+                    });
+                } else { // selection == 1
+                    sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
+                        return lhs.age > rhs.age;
+                    });
+                }
+                break;
+            }
+            case 6: { // Exit
                 std::cout << "Exiting...\n";
                 return;
             }
@@ -224,5 +257,28 @@ std::ostream& operator<<(std::ostream& out, const Person& p)
         << "\", age=" << p.age << '}';
 
     return out;
+}
+
+template<typename T, typename F>
+void sort_list(LinkedList<T>& list, F comparison_func)
+{
+    // Copy all person instances to a temporary buffer.
+    std::vector<Person> person_buffer(list.begin(), list.end());
+
+    // Sort the buffer
+    std::sort(person_buffer.begin(), person_buffer.end(), comparison_func);
+
+    LinkedList<Person> new_list;
+
+    // Copy sorted element into a new list.
+    // Note that this leaves elements in reverse order.
+    for (auto& elem : person_buffer) {
+        new_list.push_front(elem);
+    }
+
+    // Move new list into list.
+    // The old list, and all of its elements, will no be owned locally and will
+    // be destroyed once this function exits.
+    list = std::move(new_list);
 }
 } // end namespace
