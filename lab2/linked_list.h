@@ -21,6 +21,7 @@
 #define ECEE_2160_LAB_REPORTS_LINKED_LIST_H
 
 #include <memory>           // for std::unique_ptr
+#include <utility>          // for std::exchange (in move ctor)
 
 /**
  * A singlely linked list.
@@ -40,6 +41,12 @@ class LinkedList {
      * sources included with my compiler. By defining separate classes for
      * nodes with data and nodes without data, we gain the ability of having
      * a unified interface for accessing the head and tail of the list.
+     *
+     * If we used only one Node class, the head pointer could not be treated as
+     * a node, which would prevent the creation of iterators that reference the
+     * location just before the list, which is needed for
+     * LinkedList<T>::insert_after to be able to manipulate the first location
+     * in the list.
      */
     struct BaseNode {
         /// Owning pointer to the next node.

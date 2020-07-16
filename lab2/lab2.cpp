@@ -194,10 +194,12 @@ void run_list_interactive(LinkedList<Person>& list)
                 auto selection = prompt_user<bool>("Selection: ");
 
                 if (selection == 0) {
+                    // Sort the list by comparing names.
                     sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
                         return lhs.name > rhs.name;
                     });
                 } else { // selection == 1
+                    // Sort the list by comparing ages.
                     sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
                         return lhs.age > rhs.age;
                     });
@@ -265,7 +267,7 @@ void sort_list(LinkedList<T>& list, F comparison_func)
     // Copy all person instances to a temporary buffer.
     std::vector<Person> person_buffer(list.begin(), list.end());
 
-    // Sort the buffer
+    // Sort the buffer using the provided comparison function.
     std::sort(person_buffer.begin(), person_buffer.end(), comparison_func);
 
     LinkedList<Person> new_list;
@@ -276,8 +278,8 @@ void sort_list(LinkedList<T>& list, F comparison_func)
         new_list.push_front(elem);
     }
 
-    // Move new list into list.
-    // The old list, and all of its elements, will no be owned locally and will
+    // Move "new list" into "list" by invoking the move assignment operator.
+    // The old list, and all of its elements, will now be owned locally and will
     // be destroyed once this function exits.
     list = std::move(new_list);
 }
