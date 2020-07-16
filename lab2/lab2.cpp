@@ -10,19 +10,18 @@
  *  - https://en.cppreference.com/w/cpp/algorithm/find
  *  - https://en.cppreference.com/w/cpp/iterator/advance
  *  - https://en.cppreference.com/w/cpp/algorithm/sort
- *  - https://en.cppreference.com/w/cpp/container/vector/vector
- *  - https://en.cppreference.com/w/cpp/algorithm/move
+ *  - https://en.cppreference.com/w/cpp/container/multiset
  *
  */
 
 #include "linked_list.h"
 
-#include <algorithm>    // for std::find, std::move
+#include <algorithm>    // for std::find
 #include <array>        // for std::array (used in menu)
 #include <iostream>     // for std::cout, std::cin
 #include <limits>       // for std::numeric_limits
+#include <set>          // for std::multiset (used for sorting list)
 #include <string_view>  // for std::string_view
-#include <vector>       // for std::vector
 
 // For access to string view literals
 using std::string_view_literals::operator ""sv;
@@ -264,19 +263,15 @@ std::ostream& operator<<(std::ostream& out, const Person& p)
 template<typename T, typename F>
 void sort_list(LinkedList<T>& list, F comparison_func)
 {
-    // Copy all person instances to a temporary buffer.
-    std::vector<Person> person_buffer(list.begin(), list.end());
+    // Used std::multiset with the given comparison function to construct a
+    // binary tree based on the element orderings. For sufficiently long lists,
+    // this should be faster than placing all of the list entries in a vector
+    // and then sorting (though this theory hasn't been tested).
+    std::multiset<Person, F> binary_tree(list.begin(), list.end(), comparison_func);
 
-    // Sort the buffer using the provided comparison function.
-    std::sort(person_buffer.begin(), person_buffer.end(), comparison_func);
-
-    LinkedList<Person> new_list;
-
-    // Copy sorted element into a new list.
+    // Copy sorted elements into a new list using the range constructor.
     // Note that this leaves elements in reverse order.
-    for (auto& elem : person_buffer) {
-        new_list.push_front(elem);
-    }
+    LinkedList<Person> new_list(binary_tree.cbegin(), binary_tree.cend());
 
     // Move "new list" into "list" by invoking the move assignment operator.
     // The old list, and all of its elements, will now be owned locally and will

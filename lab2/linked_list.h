@@ -113,14 +113,16 @@ class LinkedList {
 
         /*
          * Dereference operator overload.
-         * We assume that this iterator points a valid Node (not a BaseNode).
+         *
+         * We assume that this iterator points a valid Node (not a BaseNode),
+         * which makes the static casts below safe.
          */
         reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
         pointer operator->() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
         /*
-         * Comparison operators
+         * Comparison operators.
          */
         bool operator==(iterator other) const noexcept { return m_iter_pos == other.m_iter_pos; }
 
@@ -149,7 +151,22 @@ class LinkedList {
     LinkedList() = default;
 
     /*
-     * Copy assignment and constructors were not necessary for this assignment.
+     * Range constructor.
+     *
+     * Added to simplifier the code for the extra credit portion of this lab.
+     */
+    template<typename Iter>
+    LinkedList(Iter it, Iter end)
+    {
+        while (it != end) {
+            this->push_front(*it);
+            ++it;
+        }
+    }
+
+    /*
+     * Copy constructors and assignment operator were not necessary for this
+     * lab.
      *
      * To prevent accidents, we explicitly disallow the compiler from generating
      * them.
