@@ -24,4 +24,10 @@ int main() {
         std::cout << elem << ' ';
     }
     std::cout << '\n';
+
+    z.remove_after(z.begin());
+    for(const auto elem : z) {
+        std::cout << elem << ' ';
+    }
+    std::cout << '\n';
 }

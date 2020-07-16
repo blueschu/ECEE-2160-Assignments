@@ -12,7 +12,7 @@
  *  [3] https://en.cppreference.com/w/cpp/container/forward_list
  *  [4] https://en.cppreference.com/w/cpp/named_req/ForwardIterator
  *  [5] https://stackoverflow.com/a/38103394
- *
+ *  [6] https://en.cppreference.com/w/cpp/iterator/iterator_traits
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_LINKED_LIST_H
@@ -75,7 +75,7 @@ class LinkedList {
         BaseNode* m_iter_pos{nullptr};
 
         /*
-         * Standard aliases for iterator traits
+         * Standard aliases for iterator traits [6].
          */
         using value_type = T;
         using pointer = T*;
@@ -210,6 +210,15 @@ class LinkedList {
      * @param value Element to be inserted.
      */
     void push_front(const T& value);
+
+    /**
+     * Removes the elements immediately following the given position.
+     *
+     * This function is analogous to std::forward_iterator::erase_after().
+     *
+     * @param position Iterating preceding the element to be removed.
+     */
+    void remove_after(iterator position);
 
 };
 
