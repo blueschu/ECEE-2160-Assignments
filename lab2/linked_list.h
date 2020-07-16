@@ -153,7 +153,7 @@ class LinkedList {
     /*
      * Range constructor.
      *
-     * Added to simplifier the code for the extra credit portion of this lab.
+     * Added to simplify the code in the extra credit portion of this lab.
      */
     template<typename Iter>
     LinkedList(Iter it, Iter end)
