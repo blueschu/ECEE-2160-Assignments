@@ -145,7 +145,7 @@ class LinkedList {
      * Copy assignment and constructors were not necessary for this assignment.
      *
      * To prevent accidents, we explicitly disallow the compiler from generating
-     * them
+     * them.
      */
     LinkedList(const LinkedList&) = delete;
 
