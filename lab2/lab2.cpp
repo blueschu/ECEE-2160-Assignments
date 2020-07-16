@@ -12,13 +12,15 @@
 
 int main() {
 
-    LinkedList<int> z{};
+    LinkedList<int> z;
 //
     auto it = z.before_begin();
 //
-    z.insert(it, 7);
+    z.insert_after(it, 7);
+    z.push_front(8);
+    z.push_front(9);
 
-    for(auto elem : z) {
+    for(const auto elem : z) {
         std::cout << elem << ' ';
     }
     std::cout << '\n';

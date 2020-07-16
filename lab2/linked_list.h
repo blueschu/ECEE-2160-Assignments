@@ -25,6 +25,7 @@
  *
  * This implementation attempts to implement a similar interface to that of
  * `std::forward_list` from the C++ standard library.
+ *
  * @tparam T The data type of elements stored in the list.
  */
 template<typename T>
@@ -133,12 +134,25 @@ class LinkedList {
 
     };
 
-//    using iterator = LinkedListIterator<T, Node<T>*>;
-//    using const_iterator = LinkedListIterator<T, const Node<T>*>;
-
-
 
   public:
+
+    // Default constructor.
+    LinkedList() = default;
+
+    /*
+     * Move semantics were out of the scope of this lab.
+     *
+     * To prevent accidents, we explicitly disallow the compiler from generating
+     * definitions for {copy,move} {constructors, assignment operators}.
+     */
+    LinkedList(const LinkedList&) = delete;
+
+    LinkedList(LinkedList&&) = delete;
+
+    LinkedList& operator=(const LinkedList&) = delete;
+
+    LinkedList& operator=(LinkedList&&) = delete;
 
     /**
      * Returns an iterator that represents an entry just before the beginning
@@ -157,7 +171,7 @@ class LinkedList {
     /**
      * Returns an iterator representing the first element in this list.
      *
-     * @return First element interator.
+     * @return First element iterator.
      */
     iterator begin()
     {
@@ -174,17 +188,28 @@ class LinkedList {
         return iterator{nullptr};
     }
 
-//    const_iterator cbegin() const
-//    {
-//        return const_iterator{head.get()};
-//    }
-//
-//    const_iterator cend() const
-//    {
-//        return const_iterator{nullptr};
-//    }
+    /**
+     * Inserts the given element into this linked last at the position
+     * immediately following the provided iterator.
+     *
+     * This function is named after the analogous function in std::forward_list.
+     *
+     * Runs in O(1) time.
+     *
+     * @param position Iterator preceding the insertion position.
+     * @param value Element to be inserted.
+     * @return Iterator to the inserted element.
+     */
+    iterator insert_after(iterator position, const T& value);
 
-    iterator insert(iterator position, T value);
+    /**
+     * Inserts the given element at the front of this list.
+     *
+     * This function is named after the analogous function in std::forward_list.
+     *
+     * @param value Element to be inserted.
+     */
+    void push_front(const T& value);
 
 };
 

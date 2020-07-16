@@ -6,34 +6,27 @@
  *
  */
 
-//template<typename T>
-//typename LinkedList<T>::iterator LinkedList<T>::insert(LinkedList::const_iterator pos, T value)
-//{
-//    // Create new node that takes ownership of the next node.
-//    std::unique_ptr<Node<T>> temp{nullptr};
-//    std::swap(temp, pos)
-//
-//    auto new_node = Node{value, pos.pos->next.release()};
-//
-//    pos->next = new_node;
-//
-//
-//}
-
 
 template<typename T>
-typename LinkedList<T>::iterator LinkedList<T>::insert(LinkedList::iterator position, T value)
+typename LinkedList<T>::iterator LinkedList<T>::insert_after(LinkedList::iterator position, const T& value)
 {
-    // Create a new node which takes ownership of the current next node.
+    // Create a new node which takes ownership of the current "next node".
     auto new_node = std::unique_ptr<BaseNode>(new Node{
-        std::move(position.m_iter_pos->m_next_ptr),
-        value
+        std::move(position.m_iter_pos->m_next_ptr), // Transfer node ownership
+        value   // Copy value into new heap allocated node
     });
 
-    // Give ownership of the new node to the current node.
+    // Set new_node as the current node's "next node".
+    // The current node takes ownership of new_node.
     std::swap(position.m_iter_pos->m_next_ptr, new_node);
 
-    // new_node no longer owns any memory
+    // The local new_node no longer owns any memory.
 
     return position.next();
+}
+
+template<typename T>
+void LinkedList<T>::push_front(const T& value)
+{
+    insert_after(before_begin(), value);
 }
