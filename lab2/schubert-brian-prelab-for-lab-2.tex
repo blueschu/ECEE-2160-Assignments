@@ -1,0 +1,179 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{2}
+\def\LABdatedue{July 15th, 2020}
+\def\LABdatesubmitted{July 15th, 2020}
+\def\LABtitle{Linked Lists and the \texttt{gdb} Debugger}
+
+
+\input{../ecee-2160-header.tex}
+\def\LABreportheading{Prelab Assignment for Lab}
+\rhead{\LABcoursetitle\\Prelab for Lab Assignment \LABnumber}
+
+
+
+\begin{document}
+  \makelabtitle
+  
+\section*{Summary}
+
+This prelab assignment consisted of two parts. In the first part, the \texttt{gdb} debugger was used to introspect the execution of an instructor provided C++ program. In the second part, an interactive menu program was prepared, which will be used for testing a linked list implementation during the lab. Both parts were completed on a host machine running a GNU/Linux operating system\footnote{Linux Mint 19.3, ker. 4.15.0, arch. x86\_64.}. Programs were compiled using the GNU Compiler Collection (GCC) C++ compiler version 7.5.0., and debugged using the GNU \texttt{gdb} debugger version 8.1.
+
+\section*{Submission}
+
+\subsection*{Part I}
+The instructor-provided \texttt{person.cpp} file may be found in Listing~\ref{lst:instructor/person.cpp} below. This file was compiled into an executable with debug info using the following shell command.
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$ g++ -std=c++17 -Wall -Wextra -o person ./person.cpp       # Compile executable
+$ file ./person                                             # Confirm added debug info
+person: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=cd8698296f4f24be431e5dd622c4e2d09bae7707, !\bfseries\colorbox{yellow!30!orange!20!white}{with debug\_info}!, not stripped
+\end{lstlisting}
+The execution of this program was then analyzed with the following \texttt{gdb} session. Comments and explanations are included on the right hand side following a \texttt{\#} sign.
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$ gdb
+(gdb) file person                                       # Load the object file person
+Reading symbols from person...done.
+(gdb) start                                             # Begin execution
+Temporary breakpoint 1 at 0x1a5e: file ./person.cpp, line 32.
+Starting program: /path/to/person 
+
+Temporary breakpoint 1, main () at ./person.cpp:32
+32      {
+(gdb) next                                              # Advance to next source line
+33          Person person;
+(gdb) next                                              # Advance to next source line
+34          person.name = "John";
+(gdb) p person                          # The author of the program chose not to default
+$1 = {name = "", age = 1431660720}      # initalize person, so the contents of person are
+                                        # arbitrary. Reading in the program would result in UB.
+(gdb) next                                              # Advance to next source line
+35          person.age = 10;
+(gdb) next                                              # Advance to next source line
+36          PrintPerson(&person);
+(gdb) p person                                              # Print contents of person
+$2 = {name = "John", age = 10}
+(gdb) p &person                                             # Print address of person
+$3 = ((anonymous namespace)::Person *) 0x7fffffffd250       # N.B. this address is on the stack
+(gdb) p sizeof(person)
+$4 = 40                                                     # Size of person in CHAR_BIT bytes
+(gdb) print person.name.c_str()         # Address of the storage used by person.name
+$5 = 0x7fffffffd260 "John"              # Notably, this address is on the stack, not the heap
+(gdb) p &person.age
+$6 = (int *) 0x7fffffffd270             # Address of age within person structure
+(gdb) x/40bx &person                    # Examine the contents of person (40 bytes, in hex)
+0x7fffffffd250: 0x60    0xd2    0xff    0xff    0xff    0x7f    0x00    0x00
+0x7fffffffd258: 0x04    0x00    0x00    0x00    0x00    0x00    0x00    0x00  # Highlighted:
+0x7fffffffd260:!\bfseries\colorbox{yellow!30!orange!20!white}{0x4a\ \ \ \ 0x6f\ \ \ \ 0x68\ \ \ \ 0x6e\ \ \ \ 0x00}!    0x7f    0x00    0x00    # J O H N \0
+0x7fffffffd268: 0x00    0x00    0x00    0x00    0x00    0x00    0x00    0x00
+0x7fffffffd270:!\bfseries\colorbox{yellow!30!orange!20!white}{0x0a}!    0x00    0x00    0x00    0x55    0x55    0x00    0x00    # 0x0a == 10
+(gdb) x/5bc 0x7fffffffd260
+0x7fffffffd260: 74 'J'  111 'o' 104 'h' 110 'n' 0 '\000'
+# This output shows that the string "John" is stored within the std::string component of
+# person rather than on the heap. This is due to an optimization for short strings
+# implemented in the GNU C++ standard library.
+(gdb) step                                      # Advance program; enter function call
+(anonymous namespace)::PrintPerson (person=0x7fffffffd250) at ./person.cpp:26
+26          cout << person->name << " is " << person->age << " years old\n";
+(gdb) p person
+$7 = ((anonymous namespace)::Person *) 0x7fffffffd250     # Print the passed pointer; matches
+                                                          # the address of person in main
+(gdb) next                                              # Advance to next source line
+John is 10 years old
+27      }
+(gdb) next                                              # Advance to next source line
+main () at ./person.cpp:33
+33          Person person;
+(gdb) next                                              # Advance to next source line
+37      }
+(gdb) next                                              # Advance to next source line
+[Inferior 1 (process 22465) exited normally]
+\end{lstlisting}
+
+
+\subsection*{Part II}
+The part consisted of preparing an interactive menu program that could be used to test a vector implementation during the lab. This program is provided in Listing~\ref{lst:prelab.cpp} in the Appendix. 
+
+The prelab program was compiled and tested with the following shell session. User inputs were provided as requested by the program.
+
+%\begin{multicols}{2}
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++17 -Wall -Wextra \
+>    -o lab2-prelab ./prelab.cpp
+$ ./lab2-prelab
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 1
+You selected "Add a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 2
+You selected "Find a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 3
+You selected "Remove a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 4
+You selected "Print the list"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: A
+Invalid input
+Select an option: 20
+Invalid selection - selection must be an integer from [1,5]
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 5
+Exiting...
+\end{lstlisting}
+%\end{multicols}
+
+
+\clearpage
+\section*{Appendix}
+\renewcommand{\thelstlisting}{A.\arabic{lstlisting}}
+
+\includecode{instructor/person.cpp}
+
+\includecode{prelab.cpp}
+
+
+\end{document}

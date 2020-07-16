@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Lab reports
 add_subdirectory(lab0)
 add_subdirectory(lab1)
+add_subdirectory(lab2)
 
 # Use C++14 for homework targets
 set(CMAKE_CXX_STANDARD 14)
