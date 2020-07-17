@@ -1,6 +1,8 @@
 /*
  * ECEE 2160 Lab Assignment 2 linked list definitions.
  *
+ * Replaced with implementation using raw pointer on 2020-07-17.
+ *
  * Author:  Brian Schubert
  * Date:    2020-07-16
  *
