@@ -40,7 +40,7 @@ constexpr auto PRELAB_MENU = std::array{
 };
 
 /**
- * Person structure from the instructor provided personList.cpp.
+ * Person structure from the instructor-provided personList.cpp file.
  */
 struct Person {
     /// This person's unique identifier.
@@ -68,7 +68,7 @@ void run_list_interactive(LinkedList<Person>& list);
  *
  * @tparam T The type of the object to read.
  * @param prompt The message to be displayed to the user.
- * @return User provided integer.
+ * @return User provided T value.
  */
 template<typename T>
 T prompt_user(std::string_view prompt);
@@ -81,8 +81,8 @@ std::ostream& operator<<(std::ostream& out, const Person& p);
 /**
  * Output stream operator for LinkedList<Person>.
  *
- * We accept list as a non-const reference since we choose not to implement
- * constant iterator for this lab.
+ * We accept list as a non-const reference since we chose not to implement
+ * constant iterators for this lab.
  */
 std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list);
 
@@ -101,7 +101,8 @@ void sort_list(LinkedList<T>& list, F comparison_func);
 
 int main()
 {
-    LinkedList<Person> list;
+    // Default construct list.
+    LinkedList<Person> list{};
 
     run_list_interactive(list);
 }
@@ -128,7 +129,6 @@ void run_list_interactive(LinkedList<Person>& list)
         // Prompt user for menu selection.
         auto user_selection = prompt_user<int>("Select an option: ");
 
-        // Menu selection logic implemented with switch per lab instructions.
         switch (user_selection) {
             case 1: { // Add a person.
                 auto name = prompt_user<std::string>("Enter the person's name: ");
@@ -243,14 +243,6 @@ T prompt_user(const std::string_view prompt)
     }
 }
 
-std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list)
-{
-    for (auto& elem : list) {
-        out << " - " << elem << '\n';
-    }
-    return out;
-}
-
 std::ostream& operator<<(std::ostream& out, const Person& p)
 {
     out << "Person { id=" << p.id
@@ -260,18 +252,26 @@ std::ostream& operator<<(std::ostream& out, const Person& p)
     return out;
 }
 
+std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list)
+{
+    for (const auto& elem : list) {
+        out << " - " << elem << '\n';
+    }
+    return out;
+}
+
 template<typename T, typename F>
 void sort_list(LinkedList<T>& list, F comparison_func)
 {
-    // Used std::multiset with the given comparison function to construct a
+    // Use std::multiset with the given comparison function to construct a
     // binary tree based on the element orderings. For sufficiently long lists,
     // this should be faster than placing all of the list entries in a vector
-    // and then sorting (though this theory hasn't been tested).
-    std::multiset<Person, F> binary_tree(list.begin(), list.end(), comparison_func);
+    // and then sorting (though have not we run any benchmarks to test this).
+    std::multiset<T, F> binary_tree(list.begin(), list.end(), comparison_func);
 
-    // Copy sorted elements into a new list using the range constructor.
+    // Copy the sorted elements into a new list using the range constructor.
     // Note that this leaves elements in reverse order.
-    LinkedList<Person> new_list(binary_tree.cbegin(), binary_tree.cend());
+    LinkedList<T> new_list(binary_tree.cbegin(), binary_tree.cend());
 
     // Move "new list" into "list" by invoking the move assignment operator.
     // The old list, and all of its elements, will now be owned locally and will

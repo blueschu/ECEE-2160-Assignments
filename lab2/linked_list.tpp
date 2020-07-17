@@ -7,7 +7,8 @@
  */
 
 template<typename T>
-typename LinkedList<T>::iterator LinkedList<T>::insert_after(LinkedList::iterator position, const T& value)
+typename LinkedList<T>::iterator  // typename keyword needed for dependent return type
+LinkedList<T>::insert_after(LinkedList<T>::iterator position, const T& value)
 {
     // Create a new node which takes ownership of the current "next node".
     auto new_node = std::unique_ptr<BaseNode>(new Node{
@@ -40,7 +41,7 @@ void LinkedList<T>::remove_after(LinkedList::iterator position)
 
     // Given ownership of the node after "next node" to the temporary variable
     // on the stack.
-    // This is the node we want the current node to own.
+    // This is the node that we want the current node to own.
     std::swap(tmp, next_node_ptr->m_next_ptr);
     // Swap the node after "next node" into the current node, and give the
     // pointer to the "next node" to the temporary.

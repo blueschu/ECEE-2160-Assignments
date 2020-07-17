@@ -15,6 +15,7 @@
  *  [6] https://en.cppreference.com/w/cpp/iterator/iterator_traits
  *  [7] https://en.cppreference.com/w/cpp/language/rule_of_three
  *  [8] https://en.cppreference.com/w/cpp/utility/exchange
+ *  [9] https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_LINKED_LIST_H
@@ -26,7 +27,7 @@
 /**
  * A singlely linked list.
  *
- * This implementation attempts to implement a similar interface to that of
+ * This implementation attempts to expose a similar interface to that of
  * `std::forward_list` from the C++ standard library.
  *
  * @tparam T The data type of elements stored in the list.
@@ -44,7 +45,7 @@ class LinkedList {
      *
      * If we used only one Node class, the head pointer could not be treated as
      * a node, which would prevent the creation of iterators that reference the
-     * location just before the list, which is needed for
+     * location just before the list. This functionality is needed in order for
      * LinkedList<T>::insert_after to be able to manipulate the first location
      * in the list.
      */
@@ -106,7 +107,7 @@ class LinkedList {
          */
         iterator next() const noexcept
         {
-            // If this iterator does not is not a nullptr (i.e. end iterator),
+            // If this iterator is not the end iterator (i.e., set to nullptr),
             // return an iterator to the node that follows the current node.
             return iterator(m_iter_pos ? m_iter_pos->m_next_ptr.get() : nullptr);
         }
@@ -147,7 +148,12 @@ class LinkedList {
 
   public:
 
-    // Default constructor.
+    /*
+     * Default constructor.
+     *
+     * All members are already given in-class member initializers, so we can
+     * just use the compiler generated default constructor [C.45,C.80 in 9].
+     */
     LinkedList() = default;
 
     /*
@@ -165,11 +171,11 @@ class LinkedList {
     }
 
     /*
-     * Copy constructors and assignment operator were not necessary for this
+     * Copy constructor and assignment operator were not necessary for this
      * lab.
      *
      * To prevent accidents, we explicitly disallow the compiler from generating
-     * them.
+     * them [C.21,C.81 in 9].
      */
     LinkedList(const LinkedList&) = delete;
 
@@ -181,14 +187,15 @@ class LinkedList {
      * Moves are required in our implementation of the extra credit portion
      * of this lab.
      */
-    // Move constructor [7].
+    // Move constructor [7, C.66 in 9].
     LinkedList(LinkedList&& other) noexcept
         : m_head(std::exchange(other.m_head, nullptr)) {}
 
-    // Move assignment.
+    // Move assignment [7, C.66 in 9].
     LinkedList& operator=(LinkedList&& other) noexcept
     {
         std::swap(m_head, other.m_head);
+        return *this;
     }
 
     /**
