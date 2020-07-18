@@ -21,6 +21,8 @@
 #ifndef ECEE_2160_LAB_REPORTS_LINKED_LIST_H
 #define ECEE_2160_LAB_REPORTS_LINKED_LIST_H
 
+#include "bad_unique.h"
+
 #include <memory>           // for std::unique_ptr
 #include <utility>          // for std::exchange (in move ctor)
 
@@ -51,7 +53,7 @@ class LinkedList {
      */
     struct BaseNode {
         /// Owning pointer to the next node.
-        std::unique_ptr<BaseNode> m_next_ptr;
+        BadUnique<BaseNode> m_next_ptr;
     };
 
     /// Helper class representing a link in the linked list.
@@ -65,7 +67,7 @@ class LinkedList {
      *
      *  The pointer will be nullptr when the list is empty.
      */
-    BaseNode m_head{nullptr};
+    BaseNode m_head{BadUnique<BaseNode>{nullptr}};
 
   public:
     /**
@@ -182,19 +184,21 @@ class LinkedList {
     LinkedList& operator=(const LinkedList&) = delete;
 
     /*
-     * Move constructor and assignment.
+     * Move constructor [7, C.66 in 9].
      *
      * Moves are required in our implementation of the extra credit portion
      * of this lab.
      */
-    // Move constructor [7, C.66 in 9].
     LinkedList(LinkedList&& other) noexcept
         : m_head(std::exchange(other.m_head, nullptr)) {}
 
     // Move assignment [7, C.66 in 9].
     LinkedList& operator=(LinkedList&& other) noexcept
     {
-        std::swap(m_head, other.m_head);
+        // Allow a specialized swap to be found through argument-dependent
+        // lookup if we later define one [C.165 in 9].
+        using std::swap;
+        swap(m_head, other.m_head);
         return *this;
     }
 

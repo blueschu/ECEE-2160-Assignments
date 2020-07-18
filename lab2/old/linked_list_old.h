@@ -272,6 +272,6 @@ class LinkedList {
 
 };
 
-#include "linked_list.tpp"
+#include "../linked_list.tpp"
 
 #endif //ECEE_2160_LAB_REPORTS_LINKED_LIST_H

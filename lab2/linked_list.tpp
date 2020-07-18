@@ -11,7 +11,7 @@ typename LinkedList<T>::iterator  // typename keyword needed for dependent retur
 LinkedList<T>::insert_after(LinkedList<T>::iterator position, const T& value)
 {
     // Create a new node which takes ownership of the current "next node".
-    auto new_node = std::unique_ptr<BaseNode>(new Node{
+    auto new_node = BadUnique<BaseNode>(new Node{
         std::move(position.m_iter_pos->m_next_ptr), // Transfer node ownership
         value   // Copy value into new heap allocated node
     });
@@ -28,27 +28,29 @@ LinkedList<T>::insert_after(LinkedList<T>::iterator position, const T& value)
 template<typename T>
 void LinkedList<T>::push_front(const T& value)
 {
-    // Cast to void to indicate intent to discard the return value.
-    static_cast<void>(
-        insert_after(before_begin(), value)
-    );
+    // Discard the return value.
+    insert_after(before_begin(), value);
 }
 
 template<typename T>
 void LinkedList<T>::remove_after(LinkedList::iterator position)
 {
-    // Reference to the pointer held by the current node for convenience.
-    std::unique_ptr<BaseNode>& next_node_ptr = position.m_iter_pos->m_next_ptr;
+    // Allow a specialized swap to be found through ADL
+    // if we later define one [C.165 in 9 from header].
+    using std::swap;
 
-    std::unique_ptr<BaseNode> tmp{nullptr};
+    // Reference to the pointer held by the current node for convenience.
+    BadUnique<BaseNode>& next_node_ptr = position.m_iter_pos->m_next_ptr;
+
+    BadUnique<BaseNode> tmp{nullptr};
 
     // Given ownership of the node after "next node" to the temporary variable
     // on the stack.
     // This is the node that we want the current node to own.
-    std::swap(tmp, next_node_ptr->m_next_ptr);
+    swap(tmp, next_node_ptr->m_next_ptr);
     // Swap the node after "next node" into the current node, and give the
     // pointer to the "next node" to the temporary.
-    std::swap(tmp, next_node_ptr);
+    swap(tmp, next_node_ptr);
 
     // The former "next node" will be desctructed when tmp goes out of scope.
 }
