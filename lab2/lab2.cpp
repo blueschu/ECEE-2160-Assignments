@@ -51,6 +51,9 @@ struct Person {
     std::string name;
 };
 
+// We use aggregate initialization for Person in run_list_interactive.
+static_assert(std::is_aggregate<Person>::value, "Person is expected to be an aggregate");
+
 /**
  * Runs a continuous interactive program that allows the user to manipulate
  * the provided list.
@@ -81,21 +84,25 @@ std::ostream& operator<<(std::ostream& out, const Person& p);
 /**
  * Output stream operator for LinkedList<Person>.
  *
- * We accept list as a non-const reference since we chose not to implement
+ * We accept list as a non-const reference since we did not implement
  * constant iterators for this lab.
  */
-std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list);
+std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list);
 
 /**
  * Sorts the given list based on the values returned by the given key
  * selector callable.
  *
+ * We accept list as a non-const reference since we did not implement
+ * constant iterators for this lab.
+ *
  * @tparam T List content type.
  * @param list List to be sorted
  * @param comparison_func The function to be used for comparing list elements.
+ * @returns Sorted list.
  */
 template<typename T, typename F>
-void sort_list(LinkedList<T>& list, F comparison_func);
+LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, F comparison_func);
 
 } // end namespace
 
@@ -135,8 +142,11 @@ void run_list_interactive(LinkedList<Person>& list)
                 auto age = prompt_user<int>("Enter the person's age: ");
 
                 // Move overload not implemented for LinkedList::push_front,
-                // to this call results in a deep copy of the temporary.
-                list.push_front(Person{
+                // so this call results in a deep copy of the temporary.
+                // However, since the user-provided names are likely going to be
+                // very short, moves and copies will generally be equivalent,
+                // owing to short string optimization in the GNU C++ STL.
+                list.push_front(Person{ // Aggregate initialize Person.
                     person_id_generator(),
                     age,
                     name
@@ -194,12 +204,16 @@ void run_list_interactive(LinkedList<Person>& list)
 
                 if (selection == 0) {
                     // Sort the list by comparing names.
-                    sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
+                    // We move the new list into "list" by invoking the move assignment operator.
+                    // The old list, and all of its elements, will now be owned by the temporary
+                    // and will be destroyed at the end of this statement.
+                    list = sorted_list(list, [](const Person& lhs, const Person& rhs) -> bool {
                         return lhs.name > rhs.name;
                     });
                 } else { // selection == 1
                     // Sort the list by comparing ages.
-                    sort_list(list, [](const Person& lhs, const Person& rhs) -> bool {
+                    // See comment on move assignment in other branch.
+                    list = sorted_list(list, [](const Person& lhs, const Person& rhs) -> bool {
                         return lhs.age > rhs.age;
                     });
                 }
@@ -252,7 +266,7 @@ std::ostream& operator<<(std::ostream& out, const Person& p)
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list)
+std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list)
 {
     for (const auto& elem : list) {
         out << " - " << elem << '\n';
@@ -261,7 +275,7 @@ std::ostream& operator<<(std::ostream& out, LinkedList<Person>& list)
 }
 
 template<typename T, typename F>
-void sort_list(LinkedList<T>& list, F comparison_func)
+LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, F comparison_func)
 {
     // Use std::multiset with the given comparison function to construct a
     // binary tree based on the element orderings. For sufficiently long lists,
@@ -273,9 +287,6 @@ void sort_list(LinkedList<T>& list, F comparison_func)
     // Note that this leaves elements in reverse order.
     LinkedList<T> new_list(binary_tree.cbegin(), binary_tree.cend());
 
-    // Move "new list" into "list" by invoking the move assignment operator.
-    // The old list, and all of its elements, will now be owned locally and will
-    // be destroyed once this function exits.
-    list = std::move(new_list);
+    return new_list;
 }
 } // end namespace
