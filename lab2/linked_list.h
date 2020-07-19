@@ -23,7 +23,7 @@
 
 #include "bad_unique.h"
 
-#include <memory>           // for std::unique_ptr
+#include <iterator>         // for iterator tag
 #include <utility>          // for std::exchange (in move ctor)
 
 /**
@@ -95,7 +95,12 @@ class LinkedList {
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::forward_iterator_tag;
 
-        // Default constructor.
+        /*
+         * Default constructor.
+         *
+         * All members are already given in-class member initializers, so we can
+         * just use the compiler generated default constructor [C.45,C.80 in 9].
+         */
         iterator() noexcept = default;
 
         // Construct an iterator from a base node pointer.
@@ -111,7 +116,7 @@ class LinkedList {
         {
             // If this iterator is not the end iterator (i.e., set to nullptr),
             // return an iterator to the node that follows the current node.
-            return iterator(m_iter_pos ? m_iter_pos->m_next_ptr.get() : nullptr);
+            return iterator{m_iter_pos ? m_iter_pos->m_next_ptr.get() : nullptr};
         }
 
         /*
@@ -122,7 +127,7 @@ class LinkedList {
          */
         reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
-        pointer operator->() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
+        pointer operator->() noexcept { return &static_cast<Node*>(m_iter_pos)->m_value; }
 
         /*
          * Comparison operators.
@@ -146,9 +151,7 @@ class LinkedList {
             return temp;
         }
 
-    };
-
-  public:
+    }; // end struct iterator
 
     /*
      * Default constructor.
@@ -190,7 +193,10 @@ class LinkedList {
      * of this lab.
      */
     LinkedList(LinkedList&& other) noexcept
-        : m_head(std::exchange(other.m_head, nullptr)) {}
+        : m_head{std::exchange(
+            other.m_head,
+            BaseNode{BadUnique<BaseNode>{nullptr}}
+        )} {}
 
     // Move assignment [7, C.66 in 9].
     LinkedList& operator=(LinkedList&& other) noexcept

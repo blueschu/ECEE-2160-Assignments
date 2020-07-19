@@ -122,7 +122,7 @@ class LinkedList {
          */
         reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
-        pointer operator->() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
+        pointer operator->() noexcept { return &static_cast<Node*>(m_iter_pos)->m_value; }
 
         /*
          * Comparison operators.
@@ -191,7 +191,7 @@ class LinkedList {
      */
     // Move constructor [7, C.66 in 9].
     LinkedList(LinkedList&& other) noexcept
-        : m_head(std::exchange(other.m_head, nullptr)) {}
+        : m_head(std::exchange(other.m_head, BaseNode{nullptr})) {}
 
     // Move assignment [7, C.66 in 9].
     LinkedList& operator=(LinkedList&& other) noexcept
@@ -272,6 +272,6 @@ class LinkedList {
 
 };
 
-#include "../linked_list.tpp"
+#include "linked_list_old.tpp"
 
 #endif //ECEE_2160_LAB_REPORTS_LINKED_LIST_H
