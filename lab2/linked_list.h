@@ -67,7 +67,7 @@ class LinkedList {
      *
      *  The pointer will be nullptr when the list is empty.
      */
-    BaseNode m_head{BadUnique<BaseNode>{nullptr}};
+    BaseNode m_head{};
 
   public:
     /**
@@ -193,10 +193,7 @@ class LinkedList {
      * of this lab.
      */
     LinkedList(LinkedList&& other) noexcept
-        : m_head{std::exchange(
-            other.m_head,
-            BaseNode{BadUnique<BaseNode>{nullptr}}
-        )} {}
+        : m_head{std::exchange(other.m_head, BaseNode{})} {}
 
     // Move assignment [7, C.66 in 9].
     LinkedList& operator=(LinkedList&& other) noexcept

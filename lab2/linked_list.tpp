@@ -42,7 +42,7 @@ void LinkedList<T>::remove_after(LinkedList::iterator position)
     // Reference to the pointer held by the current node for convenience.
     BadUnique<BaseNode>& next_node_ptr = position.m_iter_pos->m_next_ptr;
 
-    BadUnique<BaseNode> tmp{nullptr};
+    BadUnique<BaseNode> tmp{};
 
     // Given ownership of the node after "next node" to the temporary variable
     // on the stack.
