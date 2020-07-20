@@ -11,6 +11,7 @@
  *  - https://en.cppreference.com/w/cpp/iterator/advance
  *  - https://en.cppreference.com/w/cpp/algorithm/sort
  *  - https://en.cppreference.com/w/cpp/container/multiset
+ *  - https://en.cppreference.com/w/cpp/utility/functional/greater
  *
  */
 
@@ -18,10 +19,13 @@
 
 #include <algorithm>    // for std::find
 #include <array>        // for std::array (used in menu)
+#include <functional>   // for std::greater
 #include <iostream>     // for std::cout, std::cin
 #include <limits>       // for std::numeric_limits
 #include <set>          // for std::multiset (used for sorting list)
 #include <string_view>  // for std::string_view
+
+
 
 // For access to string view literals
 using std::string_view_literals::operator ""sv;
@@ -90,8 +94,8 @@ std::ostream& operator<<(std::ostream& out, const Person& p);
 std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list);
 
 /**
- * Sorts the given list based on the values returned by the given key
- * selector callable.
+ * Sorts the given list based on the ordering described by the given
+ * comparison function.
  *
  * We accept list as a non-const reference since we did not implement
  * constant iterators for this lab.
@@ -101,8 +105,44 @@ std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list);
  * @param comparison_func The function to be used for comparing list elements.
  * @returns Sorted list.
  */
-template<typename T, typename F>
-LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, F comparison_func);
+template<typename T, typename Compare>
+LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func);
+
+/**
+ * Helper function for creating lambdas that compare two T instances
+ * based on a member variable designated by a member pointer.
+ *
+ * Two lambdas of this form are used in the extra credit portion of this
+ * lab, so we decided to lift this pattern into a constexpr function.
+ *
+ * Automatic return type deduction is used since the return value is of
+ * a unique type for the lambda expression.
+ *
+ * We decided to further generalize this function by also templating it over
+ * the function used to compare the members variables. This style was inspired
+ * by inspecting the source for std::multiset.
+ *
+ * The template parameter Compare is defaulted to the class std::greater<Member>
+ * because we care about sorting a list in descending order for the purposes of
+ * this lab. In general, a more natural default would be std::less, which would
+ * correspond to sorting in ascending order. This is the default used by
+ * std::multiset.
+ *
+ * @tparam T The type of values that the produced function will compare.
+ * @tparam Member The type of the member variable of T that the produced function
+ *           will compare.
+ * @tparam Compare The type of the comparison function used to compare the selected
+ *           member variables.
+ * @param member The member pointer.
+ * @return Function object for comparing T instance based on a member variable members.
+ */
+template<typename T, typename Member, typename Compare = std::greater<Member>>
+constexpr auto make_compare_by_member(const Member T::* member, Compare compare = Compare())
+{
+    return [member, compare](const T& lhs, const T& rhs) -> bool {
+        return compare(lhs.*member, rhs.*member);
+    };
+}
 
 } // end namespace
 
@@ -141,11 +181,11 @@ void run_list_interactive(LinkedList<Person>& list)
                 auto name = prompt_user<std::string>("Enter the person's name: ");
                 auto age = prompt_user<int>("Enter the person's age: ");
 
-                // Move overload not implemented for LinkedList::push_front,
+                // A move overload is not not implemented for LinkedList::push_front,
                 // so this call results in a deep copy of the temporary.
                 // However, since the user-provided names are likely going to be
-                // very short, moves and copies will generally be equivalent,
-                // owing to short string optimization in the GNU C++ STL.
+                // very short, moves and copies should be equivalent, owing to
+                // short string optimization in the GNU C++ STL.
                 list.push_front(Person{ // Aggregate initialize Person.
                     person_id_generator(),
                     age,
@@ -207,15 +247,11 @@ void run_list_interactive(LinkedList<Person>& list)
                     // We move the new list into "list" by invoking the move assignment operator.
                     // The old list, and all of its elements, will now be owned by the temporary
                     // and will be destroyed at the end of this statement.
-                    list = sorted_list(list, [](const Person& lhs, const Person& rhs) -> bool {
-                        return lhs.name > rhs.name;
-                    });
+                    list = sorted_list(list, make_compare_by_member(&Person::name));
                 } else { // selection == 1
                     // Sort the list by comparing ages.
                     // See comment on move assignment in other branch.
-                    list = sorted_list(list, [](const Person& lhs, const Person& rhs) -> bool {
-                        return lhs.age > rhs.age;
-                    });
+                    list = sorted_list(list, make_compare_by_member(&Person::age));
                 }
                 break;
             }
@@ -274,14 +310,14 @@ std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list)
     return out;
 }
 
-template<typename T, typename F>
-LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, F comparison_func)
+template<typename T, typename Compare>
+LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func)
 {
     // Use std::multiset with the given comparison function to construct a
     // binary tree based on the element orderings. For sufficiently long lists,
     // this should be faster than placing all of the list entries in a vector
     // and then sorting (though have not we run any benchmarks to test this).
-    std::multiset<T, F> binary_tree(list.begin(), list.end(), comparison_func);
+    std::multiset<T, Compare> binary_tree(list.begin(), list.end(), comparison_func);
 
     // Copy the sorted elements into a new list using the range constructor.
     // Note that this leaves elements in reverse order.
