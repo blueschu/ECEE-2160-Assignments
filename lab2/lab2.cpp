@@ -160,7 +160,7 @@ namespace {
 void run_list_interactive(LinkedList<Person>& list)
 {
     // Lambda to generate ID's for each person added to the list.
-    auto person_id_generator = []() {
+    const auto person_id_generator = []() {
         static int last_id{0};
         return ++last_id;
     };
@@ -174,12 +174,12 @@ void run_list_interactive(LinkedList<Person>& list)
         std::cout << '\n';
 
         // Prompt user for menu selection.
-        auto user_selection = prompt_user<int>("Select an option: ");
+        const auto user_selection = prompt_user<int>("Select an option: ");
 
         switch (user_selection) {
             case 1: { // Add a person.
-                auto name = prompt_user<std::string>("Enter the person's name: ");
-                auto age = prompt_user<int>("Enter the person's age: ");
+                const auto name = prompt_user<std::string>("Enter the person's name: ");
+                const auto age = prompt_user<int>("Enter the person's age: ");
 
                 // A move overload is not not implemented for LinkedList::push_front,
                 // so this call results in a deep copy of the temporary.
@@ -194,10 +194,10 @@ void run_list_interactive(LinkedList<Person>& list)
                 break;
             }
             case 2: { // Find a person.
-                auto needle_id = prompt_user<int>("Enter the ID to search for: ");
+                const auto needle_id = prompt_user<int>("Enter the ID to search for: ");
 
                 // Search for person in O(n) time.
-                auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
+                const auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
                     return p.id == needle_id;
                 });
 
@@ -210,10 +210,10 @@ void run_list_interactive(LinkedList<Person>& list)
                 break;
             }
             case 3: { // Remove a person.
-                auto needle_id = prompt_user<int>("Enter the ID of the person to delete: ");
+                const auto needle_id = prompt_user<int>("Enter the ID of the person to delete: ");
 
                 // Search for person in O(n) time.
-                auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
+                const auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
                     return p.id == needle_id;
                 });
 
@@ -240,7 +240,7 @@ void run_list_interactive(LinkedList<Person>& list)
                 std::cout << "Sort by\n 0) Name\n 1) Age\n";
                 // Only the strings "0" and "1" are accepted as valid bool
                 // inputs, so the user cannot select an invalid menu option.
-                auto selection = prompt_user<bool>("Selection: ");
+                const auto selection = prompt_user<bool>("Selection: ");
 
                 if (selection == 0) {
                     // Sort the list by comparing names.
@@ -317,7 +317,7 @@ LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func
     // binary tree based on the element orderings. For sufficiently long lists,
     // this should be faster than placing all of the list entries in a vector
     // and then sorting (though have not we run any benchmarks to test this).
-    std::multiset<T, Compare> binary_tree(list.begin(), list.end(), comparison_func);
+    const std::multiset<T, Compare> binary_tree(list.begin(), list.end(), comparison_func);
 
     // Copy the sorted elements into a new list using the range constructor.
     // Note that this leaves elements in reverse order.

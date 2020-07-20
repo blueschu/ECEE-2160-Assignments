@@ -125,9 +125,9 @@ class LinkedList {
          * We assume that this iterator points a valid Node (not a BaseNode),
          * which makes the static casts below safe.
          */
-        reference operator*() noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
+        reference operator*() const noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
 
-        pointer operator->() noexcept { return &static_cast<Node*>(m_iter_pos)->m_value; }
+        pointer operator->() const noexcept { return &static_cast<Node*>(m_iter_pos)->m_value; }
 
         /*
          * Comparison operators.

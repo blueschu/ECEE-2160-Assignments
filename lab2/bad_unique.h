@@ -22,15 +22,15 @@
  * This class is an approximate substitute for std::unique_ptr. For this
  * lab assignment, we were required to perform manual memory allocations
  * using `new` and `delete` to store nodes in a linked list. In order to
- * save some headaches from reasoning about pointer ownership, we decided
+ * save some headaches over reasoning about pointer ownership, we decided
  * to implement our own mock smart pointer with roughly the same semantics
  * as those exposed by the STL. Throughout the linked list code, each instance
  * of BadUnique should be able to be replaced by std;:unique_ptr with no
  * obvious change in behavior.
  *
  * This should make our linked list implementation much easier to read
- * since only basic knowledge of move semantics is required rather than a full
- * interpretation of invariants imposed by the class.
+ * since only basic knowledge of move semantics is required to understand
+ * how memory is being managed.
  *
  * @tparam T The value type referenced by this pointer.
  */
@@ -80,10 +80,10 @@ class BadUnique {
     }
 
     // Dereference operator overload.
-    T& operator*() noexcept { return *m_ptr; }
+    T& operator*() const noexcept { return *m_ptr; }
 
     // Arrow operator overload.
-    T* operator->() noexcept { return m_ptr; }
+    T* operator->() const noexcept { return m_ptr; }
 
     /**
      * Returns the owned pointer without releasing ownership.
