@@ -11,7 +11,9 @@
  *  - https://en.cppreference.com/w/cpp/iterator/advance
  *  - https://en.cppreference.com/w/cpp/algorithm/sort
  *  - https://en.cppreference.com/w/cpp/container/multiset
- *  - https://en.cppreference.com/w/cpp/utility/functional/greater
+ *  - https://en.cppreference.com/w/cpp/language/pointer
+ *  - https://en.cppreference.com/w/cpp/utility/functional/less
+ *  - https://en.cppreference.com/w/cpp/utility/functional/not_fn
  *
  */
 
@@ -19,7 +21,7 @@
 
 #include <algorithm>    // for std::find
 #include <array>        // for std::array (used in menu)
-#include <functional>   // for std::greater
+#include <functional>   // for std::less, std::not_fn
 #include <iostream>     // for std::cout, std::cin
 #include <limits>       // for std::numeric_limits
 #include <set>          // for std::multiset (used for sorting list)
@@ -102,7 +104,8 @@ std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list);
  *
  * @tparam T List content type.
  * @param list List to be sorted
- * @param comparison_func The function to be used for comparing list elements.
+ * @param comparison_func Function object that returns `true` if the first
+ *                        argument is less than the second argument.
  * @returns Sorted list.
  */
 template<typename T, typename Compare>
@@ -122,11 +125,9 @@ LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func
  * the function used to compare the members variables. This style was inspired
  * by inspecting the source for std::multiset.
  *
- * The template parameter Compare is defaulted to the class std::greater<Member>
- * because we care about sorting a list in descending order for the purposes of
- * this lab. In general, a more natural default would be std::less, which would
- * correspond to sorting in ascending order. This is the default used by
- * std::multiset.
+ * The template parameter Compare is defaulted to the class std::less<Member>
+ * to match the convention used by STL algorithms (e.g. std::sort,
+ * std::multiset).
  *
  * @tparam T The type of values that the produced function will compare.
  * @tparam Member The type of the member variable of T that the produced function
@@ -136,7 +137,7 @@ LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func
  * @param member The member pointer.
  * @return Function object for comparing T instance based on a member variable members.
  */
-template<typename T, typename Member, typename Compare = std::greater<Member>>
+template<typename T, typename Member, typename Compare = std::less<Member>>
 constexpr auto make_compare_by_member(const Member T::* member, Compare compare = Compare())
 {
     return [member, compare](const T& lhs, const T& rhs) -> bool {
@@ -244,9 +245,9 @@ void run_list_interactive(LinkedList<Person>& list)
 
                 if (selection == 0) {
                     // Sort the list by comparing names.
-                    // We move the new list into "list" by invoking the move assignment operator.
-                    // The old list, and all of its elements, will now be owned by the temporary
-                    // and will be destroyed at the end of this statement.
+                    // We move the new list into "list" by invoking the move assignment
+                    // operator. The old list, and all of its elements, will now be owned by
+                    // the temporary and will be destroyed at the end of this statement.
                     list = sorted_list(list, make_compare_by_member(&Person::name));
                 } else { // selection == 1
                     // Sort the list by comparing ages.
@@ -313,14 +314,20 @@ std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list)
 template<typename T, typename Compare>
 LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func)
 {
+    // When constructing a list from another collection, the order of the
+    // elements is revered. We account for this reversing the ordering imposed
+    // by the comparison function via    wrapping it in a std::not_fn.
+    const auto reversed_compare = std::not_fn(comparison_func);
+
     // Use std::multiset with the given comparison function to construct a
     // binary tree based on the element orderings. For sufficiently long lists,
     // this should be faster than placing all of the list entries in a vector
     // and then sorting (though have not we run any benchmarks to test this).
-    const std::multiset<T, Compare> binary_tree(list.begin(), list.end(), comparison_func);
+    // We used decltype to obtain the anonymous type of the function object.
+    const std::multiset<T, decltype(reversed_compare)>
+        binary_tree(list.begin(), list.end(), reversed_compare);
 
     // Copy the sorted elements into a new list using the range constructor.
-    // Note that this leaves elements in reverse order.
     LinkedList<T> new_list(binary_tree.cbegin(), binary_tree.cend());
 
     return new_list;
