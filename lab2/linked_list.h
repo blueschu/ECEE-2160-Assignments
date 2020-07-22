@@ -164,7 +164,8 @@ class LinkedList {
     /**
      * Range constructor.
      *
-     * Added to simplify the code in the extra credit portion of this lab.
+     * This constructor was added to simplify the code in the extra credit
+     * portion of this lab.
      *
      * @tparam Iter Input iterator type.
      * @param it,end The range of elements to be inserted.
@@ -172,8 +173,9 @@ class LinkedList {
     template<typename Iter>
     LinkedList(Iter it, Iter end)
     {
+        auto out_end = before_begin();
         while (it != end) {
-            this->push_front(*it);
+            out_end = insert_after(out_end, *it);
             ++it;
         }
     }

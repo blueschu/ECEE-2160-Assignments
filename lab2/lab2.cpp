@@ -21,7 +21,7 @@
 
 #include <algorithm>    // for std::find
 #include <array>        // for std::array (used in menu)
-#include <functional>   // for std::less, std::not_fn
+#include <functional>   // for std::less
 #include <iostream>     // for std::cout, std::cin
 #include <limits>       // for std::numeric_limits
 #include <set>          // for std::multiset (used for sorting list)
@@ -135,7 +135,7 @@ LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func
  * @tparam Compare The type of the comparison function used to compare the selected
  *           member variables.
  * @param member The member pointer.
- * @return Function object for comparing T instance based on a member variable members.
+ * @return Function object for comparing T instances based on a member variable.
  */
 template<typename T, typename Member, typename Compare = std::less<Member>>
 constexpr auto make_compare_by_member(const Member T::* member, Compare compare = Compare())
@@ -198,9 +198,9 @@ void run_list_interactive(LinkedList<Person>& list)
                 const auto needle_id = prompt_user<int>("Enter the ID to search for: ");
 
                 // Search for person in O(n) time.
-                const auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
-                    return p.id == needle_id;
-                });
+                const auto loc = std::find_if(list.begin(), list.end(),
+                    [needle_id](const Person& p) { return p.id == needle_id; }
+                );
 
                 if (loc != list.end()) {
                     std::cout << "Found " << *loc << '\n';
@@ -214,9 +214,9 @@ void run_list_interactive(LinkedList<Person>& list)
                 const auto needle_id = prompt_user<int>("Enter the ID of the person to delete: ");
 
                 // Search for person in O(n) time.
-                const auto loc = std::find_if(list.begin(), list.end(), [needle_id](const Person& p) {
-                    return p.id == needle_id;
-                });
+                const auto loc = std::find_if(list.begin(), list.end(),
+                    [needle_id](const Person& p) { return p.id == needle_id; }
+                );
 
                 if (loc != list.end()) {
                     // Unfortunately, we can only remove elements that appear after
@@ -314,18 +314,11 @@ std::ostream& operator<<(std::ostream& out, /*const*/ LinkedList<Person>& list)
 template<typename T, typename Compare>
 LinkedList<T> sorted_list(/*const*/ LinkedList<T>& list, Compare comparison_func)
 {
-    // When constructing a list from another collection, the order of the
-    // elements is revered. We account for this reversing the ordering imposed
-    // by the comparison function via    wrapping it in a std::not_fn.
-    const auto reversed_compare = std::not_fn(comparison_func);
-
     // Use std::multiset with the given comparison function to construct a
     // binary tree based on the element orderings. For sufficiently long lists,
     // this should be faster than placing all of the list entries in a vector
     // and then sorting (though have not we run any benchmarks to test this).
-    // We used decltype to obtain the anonymous type of the function object.
-    const std::multiset<T, decltype(reversed_compare)>
-        binary_tree(list.begin(), list.end(), reversed_compare);
+    const std::multiset<T, Compare> binary_tree(list.begin(), list.end(), comparison_func);
 
     // Copy the sorted elements into a new list using the range constructor.
     LinkedList<T> new_list(binary_tree.cbegin(), binary_tree.cend());
