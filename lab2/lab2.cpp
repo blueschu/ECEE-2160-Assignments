@@ -9,11 +9,9 @@
  *
  *  - https://en.cppreference.com/w/cpp/algorithm/find
  *  - https://en.cppreference.com/w/cpp/iterator/advance
- *  - https://en.cppreference.com/w/cpp/algorithm/sort
  *  - https://en.cppreference.com/w/cpp/container/multiset
  *  - https://en.cppreference.com/w/cpp/language/pointer
  *  - https://en.cppreference.com/w/cpp/utility/functional/less
- *  - https://en.cppreference.com/w/cpp/utility/functional/not_fn
  *
  */
 

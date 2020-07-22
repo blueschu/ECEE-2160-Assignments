@@ -29,7 +29,7 @@ A host machine running a GNU/Linux operating system\footnote{Linux Mint 19.3, ke
  
 \subsection*{Prelab Assignment}
 
-This prelab assignment consisted of two parts. In the first part, the \texttt{gdb} debugger was used to introspect the execution of an instructor provided C++ program. In the second part, an interactive menu program was prepared, which will be used for testing a linked list implementation during the lab.
+This prelab assignment consisted of two parts. In the first part, the \texttt{gdb} debugger was used to inspect the execution of an instructor provided C++ program. In the second part, an interactive menu program was prepared, which will be used for testing a linked list implementation during the lab.
 
 \paragraph{Part I}
 The instructor-provided \texttt{person.cpp} file may be found in Listing~\ref{lst:instructor/person.cpp} below. This file was compiled into an executable with debug info using the following shell command.
@@ -242,7 +242,7 @@ Under this design, the C-style functions from the instructor-provided implementa
 
 The naming convention used for these member functions was based on that used in \texttt{std::forward\_list} from the C++ standard library \cite{cppreference-forward-list}. This convention was chosen so that our implementation would mimic the behavior of STL containers as closely as possible, making it easier for familiar C++ programmer to understand \cite[C.100]{stroustrup-c++-core-guidelines}
 
-The functions \texttt{LinkedList::insert\_after()} and \texttt{LinkedList::remove\_after()} were implemented through the careful use of move semantics. This strategy for manipulating a resource-owning structure was adopted from idioms commonly used in the Rust programming language \cite{rust-lang}.
+The functions \texttt{LinkedList::insert\_after()} and \texttt{LinkedList::remove\_after()} were implemented through the careful use of move semantics. This strategy for manipulating a resource-owning structure was adapted from idioms commonly used in the Rust programming language \cite{rust-lang}.
 
 As noted above, the function \texttt{ListFind()} from the example file did not translate to a single function in our linked list implementation. Rather, the C++ standard library's \texttt{std::find\_if} algorithm was used in conjunction with a custom iterator class to provide users with a searching capability. Since our iterator class met the requirements for an input iterator \cite[\S27.2.3]{open-std-N4659}, the algorithm template roughly expanded to the following C++ snippet.
 \begin{lstlisting}[style=labreportstyle-c++]
@@ -723,10 +723,13 @@ The linked list implementation from this lab could be improved by introducing a 
 \includecode{prelab.cpp}
 
 \includecode{lab2.cpp}
+Referenced \cite{cppreference-std-find-if,cppreference-advance,cppreference-multiset,cppreference-pointer,cppreference-less}.
 
 \includecode{linked\string_list.h}
+Referenced \cite{rust-too-many-lists,cppreference-unique-ptr,cppreference-forward-list,cppreference-forward-itr,so-deprecate-std-iterator,cppreference-iterator-traits,cppreference-rule-of-three,cppreference-exchange,stroustrup-c++-core-guidelines}.
 
 \includecode{bad\string_unique.h}
+Referenced \cite{cppreference-exchange,stroustrup-c++-core-guidelines}.
 
 \includecode{linked\string_list.tpp}
 

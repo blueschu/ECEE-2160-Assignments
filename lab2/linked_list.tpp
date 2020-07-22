@@ -53,6 +53,5 @@ void LinkedList<T>::remove_after(LinkedList::iterator position)
     // Swap the node after "next node" into the current node, and give the
     // pointer to the "next node" to the temporary.
     swap(tmp, next_node_ptr);
-
     // The former "next node" will be desctructed when tmp goes out of scope.
 }
