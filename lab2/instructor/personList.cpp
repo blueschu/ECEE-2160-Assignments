@@ -7,8 +7,7 @@
  * =============
  *
  * All changes made to the original file are marked by comments beginning with
- * "EDIT: ". The only change made was moving all definitions to an anonymous
- * namespace to given the symbols internal linkage.
+ * "EDIT: ".
  */
 
 #include <iostream>
@@ -139,8 +138,8 @@ void PrintPerson(Person* person)
 
 int main()
 {
-    // EDIT: added initialization of 'list'
-    List list{};                // Create the main list
+
+    List list;                  // Create the main list
     ListInitialize(&list);      // Initialize the list
 
     ListInsert(&list, new Person {
