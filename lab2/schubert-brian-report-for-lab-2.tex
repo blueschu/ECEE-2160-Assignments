@@ -1,0 +1,742 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{2}
+\def\LABtitle{Linked Lists and the \texttt{gdb} Debugger}
+\def\LABdatedue{July 22nd, 2020}
+\def\LABdatesubmitted{July 22nd, 2020}
+\def\LABabstract{\small This lab served as introduction to inspecting the execution of a C++ program using a debugger. A linked list data structure was implemented, and a short interactive program was written to test the data structure's behavior. The execution of valid and invalid programs using this data structure were then analyzed using the \texttt{gdb} debugger.}
+
+\input{../ecee-2160-header.tex}
+
+\begin{document}
+\makelabtitle
+
+\section*{Introduction}
+
+This lab was an exercise in using a debugger program to analyze the execution of a C++ program. We implemented a basic linked list data structure, which stored a sequence of elements in dynamically allocated regions of memory with constant time complexity for insertions and removals. Using a Linux executable profiler, the linked list implementation was demonstrated to be memory-safe for a prescribed set of operations. A modification was made to the program to introduce a memory error, which was then located and analyzed using a debugger. Finally, a procedure for sorting a linked list based on an arbitrary attribute of its stored elements was introduced.
+
+
+\section*{Lab Discussion}
+
+A host machine running a GNU/Linux operating system\footnote{Linux Mint 19.3, ker. 4.15.0, arch. x86\_64.}  was used to complete this lab. The following software was required.
+\begin{enumerate}
+    \item \texttt{g++}: GNU Compiler Collection (GCC) C++ compiler (version 7.5.0),
+    \item \texttt{gdb}: GNU Project debugger (version 8.1),
+    \item \texttt{valgrind}: Linux executable profiler\footnote{The use of this program was supplemental and not required for completing this lab.} (version 3.13.0) \cite{valgrind}.
+\end{enumerate}
+ 
+\subsection*{Prelab Assignment}
+
+This prelab assignment consisted of two parts. In the first part, the \texttt{gdb} debugger was used to introspect the execution of an instructor provided C++ program. In the second part, an interactive menu program was prepared, which will be used for testing a linked list implementation during the lab.
+
+\paragraph{Part I}
+The instructor-provided \texttt{person.cpp} file may be found in Listing~\ref{lst:instructor/person.cpp} below. This file was compiled into an executable with debug info using the following shell command.
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$ g++ -std=c++17 -Wall -Wextra -o person ./person.cpp       # Compile executable
+$ file ./person                                             # Confirm added debug info
+person: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=cd8698296f4f24be431e5dd622c4e2d09bae7707, !\bfseries\colorbox{yellow!30!orange!20!white}{with debug\_info}!, not stripped
+\end{lstlisting}
+The execution of this program was then analyzed with the following \texttt{gdb} session. Comments and explanations are included on the right hand side following a \texttt{\#} sign.
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$ gdb
+(gdb) file person                                       # Load the object file person
+Reading symbols from person...done.
+(gdb) start                                             # Begin execution
+Temporary breakpoint 1 at 0x1a5e: file ./person.cpp, line 32.
+Starting program: /path/to/person 
+
+Temporary breakpoint 1, main () at ./person.cpp:32
+32      {
+(gdb) next                                              # Advance to next source line
+33          Person person;
+(gdb) next                                              # Advance to next source line
+34          person.name = "John";
+(gdb) p person                          # The author of the program chose not to default
+$1 = {name = "", age = 1431660720}      # initalize person, so the contents of person are
+# arbitrary. Reading in the program would result in UB.
+(gdb) next                                              # Advance to next source line
+35          person.age = 10;
+(gdb) next                                              # Advance to next source line
+36          PrintPerson(&person);
+(gdb) p person                                              # Print contents of person
+$2 = {name = "John", age = 10}
+(gdb) p &person                                             # Print address of person
+$3 = ((anonymous namespace)::Person *) 0x7fffffffd250       # N.B. this address is on the stack
+(gdb) p sizeof(person)
+$4 = 40                                                     # Size of person in CHAR_BIT bytes
+(gdb) print person.name.c_str()         # Address of the storage used by person.name
+$5 = 0x7fffffffd260 "John"              # Notably, this address is on the stack, not the heap
+(gdb) p &person.age
+$6 = (int *) 0x7fffffffd270             # Address of age within person structure
+(gdb) x/40bx &person                    # Examine the contents of person (40 bytes, in hex)
+0x7fffffffd250: 0x60    0xd2    0xff    0xff    0xff    0x7f    0x00    0x00
+0x7fffffffd258: 0x04    0x00    0x00    0x00    0x00    0x00    0x00    0x00  # Highlighted:
+0x7fffffffd260:!\bfseries\colorbox{yellow!30!orange!20!white}{0x4a\ \ \ \ 0x6f\ \ \ \ 0x68\ \ \ \ 0x6e\ \ \ \ 0x00}!    0x7f    0x00    0x00    # J O H N \0
+0x7fffffffd268: 0x00    0x00    0x00    0x00    0x00    0x00    0x00    0x00
+0x7fffffffd270:!\bfseries\colorbox{yellow!30!orange!20!white}{0x0a}!    0x00    0x00    0x00    0x55    0x55    0x00    0x00    # 0x0a == 10
+(gdb) x/5bc 0x7fffffffd260
+0x7fffffffd260: 74 'J'  111 'o' 104 'h' 110 'n' 0 '\000'
+# This output shows that the string "John" is stored within the std::string component of
+# person rather than on the heap. This is due to an optimization for short strings
+# implemented in the GNU C++ standard library.
+(gdb) step                                      # Advance program; enter function call
+(anonymous namespace)::PrintPerson (person=0x7fffffffd250) at ./person.cpp:26
+26          cout << person->name << " is " << person->age << " years old\n";
+(gdb) p person
+$7 = ((anonymous namespace)::Person *) 0x7fffffffd250     # Print the passed pointer; matches
+# the address of person in main
+(gdb) next                                              # Advance to next source line
+John is 10 years old
+27      }
+(gdb) next                                              # Advance to next source line
+main () at ./person.cpp:33
+33          Person person;
+(gdb) next                                              # Advance to next source line
+37      }
+(gdb) next                                              # Advance to next source line
+[Inferior 1 (process 22465) exited normally]
+\end{lstlisting}
+
+
+\paragraph{Part II}
+This part consisted of preparing an interactive menu program that could be used to test a linked list implementation during the lab. This program is provided in Listing~\ref{lst:prelab.cpp} in the Appendix. 
+
+The prelab program was compiled and tested with the following shell session. User inputs were provided as requested by the program.
+
+%\begin{multicols}{2}
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++17 -Wall -Wextra -o lab2-prelab ./prelab.cpp
+$ ./lab2-prelab
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 1
+You selected "Add a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 2
+You selected "Find a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 3
+You selected "Remove a person"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 4
+You selected "Print the list"
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: A
+Invalid input
+Select an option: 20
+Invalid selection - selection must be an integer from [1,5]
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Exit
+
+Select an option: 5
+Exiting...
+\end{lstlisting}
+%\end{multicols}
+
+\section*{Results and Analysis}
+
+\subsection*{Assignment 1}
+
+This assignment consisted of analyzing the execution of the instructor-provided ``\texttt{person}'' program by creating a breakpoint in \texttt{gdb}. The same source file and compilation procedure as that used in Part~I of the Prelab Assignment were used for this assignment.
+
+The execution of the ``\texttt{person}'' program was analyzed with the following \texttt{gdb} session. Comments and explanations are included on the right hand side following a \texttt{\#} sign.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ gdb
+# Intial output omitted...
+(gdb) file person                                       # Load the object file person
+Reading symbols from person...done.
+(gdb) break PrintPerson
+Breakpoint 1 at 0x19d6: file ./person.cpp, line 26.
+(gdb) run
+Starting program: /path/to/person 
+
+Breakpoint 1, (anonymous namespace)::PrintPerson (person=0x7fffffffd290) at ./person.cpp:26
+26          cout << person->name << " is " << person->age << " years old\n";
+(gdb) p person
+$1 = ((anonymous namespace)::Person *) 0x7fffffffd290   # Contents of the Person pointer passed 
+                                                        # to PrintPerson(). This value is equal 
+                                                        # to the address of the  'person' 
+                                                        # variable from main().
+(gdb) p *person
+$2 = {name = "John", age = 10}                          # De-reference pointer variable to
+                                                        # access contents of person from main()
+(gdb) p person->name
+$3 = "John"                                             # String stored in the 'name' member 
+                                                        # variable of the provided Person 
+                                                        # instance.
+(gdb) p person->age
+$4 = 10                                                 # Integer stored in the 'age' member
+                                                        # variable of the provided Person
+                                                        # instance.
+(gdb) continue 
+Continuing.
+John is 10 years old
+[Inferior 1 (process 8505) exited normally]
+\end{lstlisting}
+
+\subsection*{Assignment 2}
+
+This assignment consisted of implementing a linked list class in C++. An example ``C-style'' linked list implementation was provided by the instructor for reference, which can be found in Listing~\ref{lst:instructor/personList.cpp} below.
+
+Since linked lists store data in nodes that are distributed through the heap, they are particularly susceptible to memory errors. In order to minimize the amount of code is responsible for upholding memory safety, we decided to isolate all direct memory management to a mock smart pointer class called \texttt{BadUnique}, which is defined in a header-only library included in Listing~\ref{lst:bad\string_unique.h}. This class still relies on the explicit use of the memory management operators \texttt{new} and \texttt{delete}. 
+%It simply helps ensure that the code for the linked list implementation is able to commit memory errors such as double frees of leaving dangling pointers since all primitive memory operations are encapsulated in a separated structure.
+
+Our linked list implementation is provided in Listings~\ref{lst:linked\string_list.h} and~\ref{lst:linked\string_list.tpp} below. When translating the provided C-style linked list structure to a C++ class, we decided to split its functionality into to two independent classes:
+\begin{enumerate}
+    \item a templated container\footnote{The class \texttt{LinkedList} does not meet the formal requirements for a container in C++ \cite[\S26.2.1]{open-std-N4659}, but a complete implementation would have been far too long and complicated for the scope of this lab assignment.} class (\texttt{LinkedList}), which was responsible for managing the data stored in the linked list; and
+    \item a forward iterator \cite[\S27.2.5]{open-std-N4659} class (\texttt{LinkedList::iterator}), which was responsible for permitting the forward navigation of a linked list.
+\end{enumerate}
+
+
+Under this design, the C-style functions from the instructor-provided implementation were translated to into the following C++ implementations.
+\begin{itemize}
+    \item \texttt{ListInitialize()} became \texttt{LinkedList::LinkedList()},
+    \item \texttt{ListNext()} became \texttt{LinkedList::iterator::operator++()},
+    \item \texttt{ListHead()} became \texttt{LinkedList::before\_begin()},
+    \item \texttt{ListGet()} became \texttt{LinkedList::iterator::operator*()},
+    \item \texttt{ListFind()} was replaced by iterator operations (see below),
+    \item \texttt{ListInsert()} became \texttt{LinkedList::insert\_after()}, and
+    \item \texttt{ListRemove()} became \texttt{LinkedList::remove\_after()}.
+\end{itemize}
+
+The naming convention used for these member functions was based on that used in \texttt{std::forward\_list} from the C++ standard library \cite{cppreference-forward-list}. This convention was chosen so that our implementation would mimic the behavior of STL containers as closely as possible, making it easier for familiar C++ programmer to understand \cite[C.100]{stroustrup-c++-core-guidelines}
+
+The functions \texttt{LinkedList::insert\_after()} and \texttt{LinkedList::remove\_after()} were implemented through the careful use of move semantics. This strategy for manipulating a resource-owning structure was adopted from idioms commonly used in the Rust programming language \cite{rust-lang}.
+
+As noted above, the function \texttt{ListFind()} from the example file did not translate to a single function in our linked list implementation. Rather, the C++ standard library's \texttt{std::find\_if} algorithm was used in conjunction with a custom iterator class to provide users with a searching capability. Since our iterator class met the requirements for an input iterator \cite[\S27.2.3]{open-std-N4659}, the algorithm template roughly expanded to the following C++ snippet.
+\begin{lstlisting}[style=labreportstyle-c++]
+auto it  = some_list.begin();
+auto end = some_list.end();
+while (it != end && it->id != needle_id) {
+    ++it;
+}
+\end{lstlisting}
+
+
+
+\subsection*{Assignment 3}\label{sec:assign-3}
+
+This assignment consisted of running a test program to demonstrate the behavior of our linked list implementation. A modified version of the interactive menu program developed during the Prelab Assignment was used to test the linked list. The source for the test program can be found in Listing~\ref{lst:lab2.cpp} in the Appendix.
+
+The complete sources for this assignment were compiled using the following shell command.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ g++ -std=c++17 -Wall -Wextra -o lab2 ./lab2.cpp
+\end{lstlisting}
+
+Since linked list implementations are highly susceptible to memory errors, we decided to use the Linux executable profiler \texttt{valgrind} \cite{valgrind} to analyze the memory usage of our linked list. This test was supplemental to the requirements of this lab assignment. 
+
+The linked list implementation was tested with the following interactive session. User inputs were provided as requested by the program. Explanations are included on the right-hand side after \texttt{\#} characters.
+
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$  valgrind --leak-check=yes ./lab2 
+==19154== Memcheck, a memory error detector
+==19154== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==19154== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==19154== Command: ./lab2
+==19154== 
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 1                                 # Add a person (id=1).
+Enter the person's name: Alpha
+Enter the person's age: 22
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 1                                 # Add a person (id=2).
+Enter the person's name: Bravo
+Enter the person's age: 31
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 1                                 # Add a person (id=3).
+Enter the person's name: Charlie
+Enter the person's age: 17
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 4                                 # Print the list.
+- Person { id=3, name="Charlie", age=17}            # All insertions were successful.
+- Person { id=2, name="Bravo", age=31}
+- Person { id=1, name="Alpha", age=22}
+
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2                                 # Search for a valid person in the list.
+Enter the ID to search for: 1
+Found Person { id=1, name="Alpha", age=22}          # The search was successful.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2                                 # Seach for an non-existant person with an
+Enter the ID to search for: 4                       # ID after all existing IDs.
+No person with ID=4 found.                          # The search failed as expected.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2                                 # Search for a non-existant person with an
+Enter the ID to search for: 0                       # ID preceding all existing IDs.
+No person with ID=0 found.                          # The search failed as expected.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2
+Enter the ID to search for: fred                    # Attempt to request an invalid ID.
+Invalid input                                       # Invalid input was rejected as expected.
+Enter the ID to search for: 3                       # Search again for a valid person.
+Found Person { id=3, name="Charlie", age=17}        # The search was successful; failed 
+                                                    # searches did not mutate the list.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 3                                 # Delete a person from the list.
+Enter the ID of the person to delete: 2
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 4                                 # No person with ID=2; 
+- Person { id=3, name="Charlie", age=17}            # deletion was successful.
+- Person { id=1, name="Alpha", age=22}
+
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2                                 # Attempt to search for a deleted person
+Enter the ID to search for: 2
+No person with ID=2 found.                          # The search failed as expected.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 1                                 # Add another person to the list (ID=4).
+Enter the person's name: Delta
+Enter the person's age: 57
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 5
+Sort by
+0) Name
+1) Age
+Selection: 0                                        # Sort the list by name.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 4                                 # Print the list. Entries are sorted in
+- Person { id=1, name="Alpha", age=22}              # ascending lexicographical order by name
+- Person { id=3, name="Charlie", age=17}            # as expected.
+- Person { id=4, name="Delta", age=57}
+
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 5
+Sort by
+0) Name
+1) Age
+Selection: 1                                        # Sort the list by age.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 4
+- Person { id=3, name="Charlie", age=17}             # Print the list. Entries are sorted in
+- Person { id=1, name="Alpha", age=22}               # ascending order by name as expected.
+- Person { id=4, name="Delta", age=57}
+
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 5
+Sort by
+0) Name
+1) Age
+Selection: 2                                        # Attempt to sort by an invalid criteria.
+Invalid input                                       # Invalid input was rejected as expected.
+Selection: 0                                        # Sort again by name.
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 4                                 # Print the list. Entries are sorted in
+- Person { id=1, name="Alpha", age=22}              # ascending lexicographical order by name 
+- Person { id=3, name="Charlie", age=17}            # as expected.
+- Person { id=4, name="Delta", age=57}
+
+
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 6                                 # Exit test program.
+Exiting...
+==19154== 
+==19154== HEAP SUMMARY:
+==19154==     in use at exit: 0 bytes in 0 blocks
+==19154==   total heap usage: 25 allocs, 25 frees, 76,024 bytes allocated
+==19154== 
+==19154== !\bfseries\colorbox{yellow!30!orange!20!white}{All heap blocks were freed -- no leaks are possible}!              # (*)
+==19154== 
+==19154== For counts of detected and suppressed errors, rerun with: -v
+==19154== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+\end{lstlisting}
+
+As indicated by the line marked \texttt{(*)} above, when the program exited all dynamically allocated memory had been successfully deallocated, so no memory leaks were encountered during the program's execution.
+
+\subsection*{Assignment 4}
+
+This assignment consisted examining the layout of our linked linked implementation at run time using the \texttt{gdb} debugger. An executable was compiled with debug info using the following shell command.
+\begin{lstlisting}[style=labreportstyle-sh,escapechar=!]
+$ g++ -g -std=c++17 -Wall -Wextra -o lab2 ./lab2.cpp
+$ file ./lab2                                           # Confirm added debug info
+lab2: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=e912a6917b4a7a57e0d2d1d179dce7f81a718a2c, !\bfseries\colorbox{yellow!30!orange!20!white}{with debug\_info}!, not stripped
+\end{lstlisting}
+The execution of the program was then analyzed with the following \texttt{gdb} session. Comments and explanations are included on the right hand side following a \texttt{\#} sign.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ gdb
+# Intial outut omitted...
+(gdb) file lab2                                         # Load object file.
+Reading symbols from lab2...done.
+(gdb) break lab2.cpp:270                                # Add breakpoint at the end of the
+Breakpoint 1 at 0x2ad6: file ../lab2.cpp, line 270.     # main menu loop per assignment
+                                                        # instructions.
+(gdb) run
+Starting program: /path/to/lab2
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 1                                     # Add a person to the list.
+Enter the person's name: Alpha
+Enter the person's age: 22
+
+Breakpoint 1, (anonymous namespace)::run_list_interactive (list=...) at ../lab2.cpp:271
+271             std::cout << '\n';                      # Breakpoint reached.
+
+(gdb) p list                                            # Print the list
+$1 = (LinkedList<(anonymous namespace)::Person> &) @0x7fffffffd270: 
+    {m_head = {m_next_ptr = {m_ptr = 0x555555773690}}}      # GDB representation of list.
+
+(gdb) p list.m_head                                         # Print the contents of the list's
+$2 = {m_next_ptr = {m_ptr = 0x555555773690}}                # "head" member.
+(gdb) ptype list.m_head                                     # Print the type of m_head.
+type = struct LinkedList<(anonymous namespace)::Person>::BaseNode {
+    BadUnique<LinkedList<(anonymous namespace)::Person>::BaseNode> m_next_ptr;
+}
+        # The "head" member is a structure that holds the pointer to the next node.
+
+(gdb) p list.m_head.m_next_ptr.m_ptr                        # View the pointer stored 
+                                                            # in the "head" member.
+$3 = (LinkedList<(anonymous namespace)::Person>::BaseNode *) 0x555555773690
+        # This is the pointer to the first node stored in the linked list.
+
+(gdb) p list.m_head.m_next_ptr.m_ptr->m_next_ptr            # Derefence the pointer held in the
+                                                            # the header to view the first
+                                                            # element stored in the list.
+$4 = {m_ptr = 0x0}
+        # Note that the "next pointer" holds a null pointer, indicating that this node
+        # is the end of the list.
+
+(gdb) p static_cast<LinkedList<(anonymous namespace)::Person>::Node>($4)
+        # Cast the previous output as a LinkedList<Person>::Node to view the full constents
+        # of the node. The reason for this cast is explained in the doc comment for 
+        # Node in the file linked_list.h.
+
+$5 = {<LinkedList<(anonymous namespace)::Person>::BaseNode> = {m_next_ptr = {m_ptr = 0x0}}, 
+    m_value = {id = 1, age = 22, name = "Alpha"}} # The person stored in the first node.
+\end{lstlisting}
+
+\subsection*{Assignment 5}
+
+This assignment consisted of strategically modifying the code from the previous assignment in such a way that the resulting program commits a memory error. The modification made was on line 205 in the file \texttt{lab2.cpp} (see Listing~\ref{lst:lab2.cpp}). As side-by-side comparison of the original and modified file is included below.
+
+\begin{minipage}{\linewidth-6mm}
+\begin{multicols}{2}
+\begin{center}\bfseries Original Code\end{center}
+\begin{lstlisting}[style=labreportstyle-c++,escapechar=+,firstnumber=205]
+if (loc +\bfseries\colorbox{yellow!30!orange!20!white}{!=}+ list.end()) {
+    std::cout << "Found " << *loc << '\n';
+} else {
+    std::cout << "No person with ID=" << needle_id << " found.\n";
+}
+\end{lstlisting}
+
+\columnbreak
+\begin{center}\bfseries  Modified, Erroneous Code\end{center}
+\begin{lstlisting}[style=labreportstyle-c++,escapechar=+,numbers=none]
+if (loc +\bfseries\colorbox{yellow!30!orange!20!white}{==}+ list.end()) {
+    std::cout << "Found " << *loc << '\n';
+} else {
+    std::cout << "No person with ID=" << needle_id << " found.\n";
+}
+\end{lstlisting}
+\end{multicols}
+\end{minipage}
+
+This change subverted a safegauard against dereferencing the \emph{past-the-end} iterator \cite[\S27.2.1c7]{open-std-N4659} that is returned by \texttt{std::find\_if} when no element in the search range satisfies the predicate \cite{cppreference-std-find-if}. For our linked list implementation, attempting to dereference a \emph{past-the-end} iterator was known to result in undefined behavior.
+
+The erroneous program was compiled using the same command as in Assignment~3. The point at which an invalid memory operation occurs was located with the following \texttt{gdb} session. Comments and explanations are included on the right hand side following a \texttt{\#} sign.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ gdb
+# Intial outut omitted..
+(gdb) file lab2                                         # Load object file.
+Reading symbols from lab2...done.
+
+(gdb) break lab2.cpp:205                                # Add breakpoint at line of interest.
+Breakpoint 1 at 0x2774: file ../lab2.cpp, line 205.
+
+(gdb) run                                               # Begin execution.
+Starting program: /mnt/share/Documents/Northeastern/1.4 - Summer 2 2020/ECEE 2160/ecee-2160-lab-reports/lab2/build-temp/lab2-error 
+====== Menu ======
+1. Add a person
+2. Find a person
+3. Remove a person
+4. Print the list
+5. Sort the list
+6. Exit
+
+Select an option: 2                                     # Enter the "find person" branch.
+Enter the ID to search for: 1
+
+Breakpoint 1, (anonymous namespace)::run_list_interactive (list=...) at ../lab2.cpp:205
+205                     if (loc == list.end()) {
+                                                        # Breakpoint reached.
+        
+(gdb) p loc                                             # Print the value of 'loc'
+$1 = {m_iter_pos = 0x0}                                 # 'loc' holds a null pointer
+
+(gdb) next                                              # Advance to next source line.
+206                         std::cout << "Found " << *loc << '\n';
+
+(gdb) step                                              # Enter dereference operator overload.
+
+LinkedList<(anonymous namespace)::Person>::iterator::operator* (this=0x7fffffffd1e0) at ../linked_list.h:128
+128             reference operator*() const noexcept { return static_cast<Node*>(m_iter_pos)->m_value; }
+
+(gdb) step                                              # Continue exection; enter output
+                                                        # stream operator overload.
+(anonymous namespace)::operator<< (out=..., p=...) at ../lab2.cpp:299
+299         out << "Person { id=" << p.id
+
+(gdb) print p                                           # Examine the variable 'p', which is a
+                                                        # const reference to a Person.
+$2 = (const (anonymous namespace)::Person &) <error reading variable>
+                            # 'p' is a reference to a non-existant Person.
+
+(gdb) step                  # Continue execution; attempt to access the person's id...
+
+Program received signal SIGSEGV, Segmentation fault.        # BOOM!
+0x0000555555556b53 in (anonymous namespace)::operator<< (out=..., p=...) at ../lab2.cpp:299
+299         out << "Person { id=" << p.id
+        # Attempting to read the memory assciated with an invalid reference (by evaluting
+        # 'p.id') resulted in a segmentation fault.
+\end{lstlisting}
+
+\subsection*{Extra Credit Assignment}
+
+This assignment consisted of adding an option to the interactive menu program to allow users to sort the list of persons by name and by age.
+
+List sorting was accomplished by the function \texttt{sorted\_list()}, which can be found in Listing~\ref{lst:lab2.cpp}. This function copies a list's entries into a \texttt{std::multiset}, whose representation automatically exposes a sorted sequence of elements. The sorted elements were then copied into a new \texttt{LinkedList} instance. Constructing a \texttt{std::multiset} occurred in $O(n\log n)$ time \cite[Table 90]{open-std-N4659}, and copying the set into a list occurred in $O(n)$ time, so the overall complexity of the sorting implementation was $O(n\log n)$.
+
+In order to accommodate both sorting lists by name and sorting lists by age, the function \texttt{sorted\_list()} accepted a function object parameter which was used by \texttt{std::multiset} for determining the ordering of entries. In the calling code, this function object was provided as a lambda function that compared either the \texttt{name} or \texttt{age} member variables of two \texttt{Person} instances. To reduce code repetition, these near identical lambda functions were replaced by calls to a \texttt{constexpr} function called \texttt{make\_compare\_by\_member()}, which generated the required lambda definitions at compile time.
+
+The functionality of our sorting implementation is demonstrated at the end of the test session included in Assignment~\hyperref[sec:assign-3]{3} of this report.
+
+% ==== This comment is no longer relevant to the current implementation ====
+%When constructing a list from an arbitrary input iterator, the ordering of the elements was reversed. This was due tot the fact that our implementation To account for this behavior, we used \texttt{std::not\_fn} to reverse the ordering imposed by the function used by \texttt{std::multiset} to compare elements. This technique, however, still left elements that were consider to be equal under the comparison function in reversed order. Consequently, the function \texttt{sorted\_list()} was not a \emph{stable} algorithm \cite[\S20.5.5.7]{open-std-N4659}. 
+
+\section*{Conclusion}
+
+This lab illustrated the value of using a debugger program to analyze the execution of an erroneous C++ program. A linked list data structure was implemented using dynamic memory allocation and was tested for memory leaks using a Linux executable profiler. This data structure was then used to create a program that performed an invalid memory operation.  Common debugging utilities, including step-by-step execution and breakpoints, were introduced and used to identify the flaws in the program.
+
+
+The linked list implementation from this lab could be improved by introducing a copy constructor and copy assignment operator. These additions would increase the versatility of the data structure since they would allow users to duplicate the structure without manually constructing a new instance element-by-element. Further, additional member functions and type aliases could be added to the linked list's implementation to make it compatible with the standard requirements for container classes \cite[\S26.2.1]{open-std-N4659}.
+
+%This lab illustrated a common use case for dynamic memory management with the implementation of a variable sized array, also known as a vector. Utility functions for adding elements to and removing elements from a vector were implemented, along with procedures to expanding and shrinking the internal storage of the vector. Common issues with performing dynamic memory allocations such as memory leaks and resource exhaustion were considered. By partially employing the C++ programming technique of RAII \cite{cppreference-raii}, the resource safety of the data structure was improved.
+%
+%
+
+
+\clearpage
+\section*{Appendix}
+\renewcommand{\thelstlisting}{A.\arabic{lstlisting}}
+
+\includecode{instructor/person.cpp}
+
+\includecode{instructor/personList.cpp}
+
+\includecode{prelab.cpp}
+
+\includecode{lab2.cpp}
+
+\includecode{linked\string_list.h}
+
+\includecode{bad\string_unique.h}
+
+\includecode{linked\string_list.tpp}
+
+
+
+
+\clearpage
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab-2.bib}
+
+\bibliographystyle{unsrt}
+
+
+\end{document}
