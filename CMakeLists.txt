@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 project(ecee-2160-lab-reports)
 
+# If we are cross-compiling for the DE1-SoC, configure CMake to use the
+# pre-C++11 ABI.
+# See report for lab0 for a brief discussion on why this setting is necessary.
+if (CMAKE_CXX_COMPILER MATCHES "arm-linux-gnueabihf-g[\+][\+]$")
+    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+endif()
+
+# Enable warnings; stop compilation if any warnings are produced.
+add_compile_options(-Wall -Wextra -pedantic -Werror)
+
 # Use C++17 for lab targets
 set(CMAKE_CXX_STANDARD 17)
 
