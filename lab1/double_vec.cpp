@@ -95,7 +95,7 @@ std::optional<DoubleVec::Elem> DoubleVec::pop()
     // If an element was removed, check if the element count has reached the
     // shrinking threshold.
     // m_size cannot be zero if an element was removed.
-    if (result && static_cast<double>(m_count) / m_size <= SHRINK_THRESHOLD) {
+    if (result && static_cast<double>(m_count) / static_cast<double>(m_size) <= SHRINK_THRESHOLD) {
         shrink();
     }
 
@@ -126,13 +126,19 @@ void DoubleVec::insert(std::size_t index, DoubleVec::Elem elem)
 
 void DoubleVec::shrink()
 {
-    // Check if we can shrink the vector without losing elements.
+    // Casts made explicit since precision-loosing conversion warnings are
+    // enabled.
+    const auto shrink_size = static_cast<size_t>(
+        static_cast<double>(m_size) * SHRINK_MAX_DECREASE
+    );
+    // Make sure that shrinking the vector won't result in losing elements.
     //
     // This check was not required by the lab instructions, but was added
     // to ensure that this function can never remove elements from this vector.
-    const std::size_t new_size = m_count >= m_size * SHRINK_MAX_DECREASE
-        ? m_count                       // Shrink to m_count == m_size.
-        : m_size * SHRINK_MAX_DECREASE; // Shrink m_size by the max decrease.
+    const std::size_t new_size = std::max(
+        m_count,        // Shrink to m_count == m_size.
+        shrink_size     // Shrink m_size by the max decrease.
+    );
 
     auto* const new_values = new DoubleVec::Elem[new_size];
 

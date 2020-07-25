@@ -71,7 +71,7 @@ int main()
     // Initialize the C standard library pseudo random number generator
     // using the current system time.
     {
-        unsigned int seed = std::time(nullptr);
+        auto seed = static_cast<unsigned int>(std::time(nullptr));
         srand(seed);
     }
 

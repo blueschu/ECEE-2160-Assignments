@@ -9,7 +9,7 @@ if (CMAKE_CXX_COMPILER MATCHES "arm-linux-gnueabihf-g[\+][\+]$")
 endif()
 
 # Enable warnings; stop compilation if any warnings are produced.
-add_compile_options(-Wall -Wextra -pedantic -Werror)
+add_compile_options(-Wall -Wextra -pedantic -Werror -Wconversion)
 
 # Use C++17 for lab targets
 set(CMAKE_CXX_STANDARD 17)
@@ -19,6 +19,7 @@ add_subdirectory(common)
 add_subdirectory(lab0)
 add_subdirectory(lab1)
 add_subdirectory(lab2)
+add_subdirectory(lab3)
 
 # Use C++14 for homework targets
 set(CMAKE_CXX_STANDARD 14)
