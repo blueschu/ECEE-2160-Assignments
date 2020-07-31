@@ -22,7 +22,7 @@
 #include <cstdlib>
 
 // Wrap POSIX API headers in a namespace to make the origin of symbols clearer.
-namespace posix_api {
+namespace posix_api { // Note: the namespace `posix` is reserved.
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -183,4 +183,37 @@ bool Read1Switch(VirtualMappingBase virtual_base, std::size_t switch_index)
 
     // Return the state of the LSB.
     return switch_state & 1u;
+}
+
+// Implemented for assignment 2.
+void WriteAllLeds(VirtualMappingBase virtual_base, Register leds_state)
+{
+    RegisterWrite(virtual_base, LEDR_BASE, leds_state);
+}
+
+// Implemented for assignment 3.
+Register ReadAllSwitches(VirtualMappingBase virtual_base)
+{
+    return RegisterRead(virtual_base, SW_BASE);
+}
+
+// Implemented for assignment 4.
+PushButton PushButtonGet(VirtualMappingBase virtual_base)
+{
+    // The current state of the buttons.
+    const auto register_state = RegisterRead(virtual_base, KEY_BASE);
+
+    auto button_state = PushButton::None;
+
+    for (std::size_t i{0}; i < PUSH_BUTTON_COUNT; ++i) {
+        // Check if the ith button is pressed.
+        if (register_state & (1u << i)) {
+            // Check if we have already found a pressed button.
+            if (button_state != PushButton::None) {
+                return PushButton::Multiple;
+            }
+            button_state = static_cast<PushButton>(i);
+        }
+    }
+    return button_state;
 }
