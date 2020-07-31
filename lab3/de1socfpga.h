@@ -100,8 +100,6 @@ class DE1SoCfpga {
     /**
      * Write a 4-byte value from the specified mapped I/O location.
      *
-     * This function was based on an example provided by the instructor.
-     *
      * @param reg_offset Offset to device to the register relative to the mapping base..
      * @return Register value to be written.
      */
@@ -112,8 +110,6 @@ class DE1SoCfpga {
 
     /**
      * Read a 4-byte value from the specified mapped I/O location.
-     *
-     * This function was based on an example provided by the instructor.
      *
      * @param reg_offset Offset to device to the register relative to the mapping base..
      * @return Register value read.

@@ -7,7 +7,6 @@
  * References
  * ==========
  *
- * - https://en.cppreference.com/w/cpp/language/operator_incdec
  * - https://en.cppreference.com/w/cpp/language/user_literal
  * - https://en.cppreference.com/w/cpp/header/thread
  * - https://stackoverflow.com/questions/1658386/
@@ -15,10 +14,10 @@
  */
 
 #include <chrono>           // for std::chrono::duration
-#include <functional>       // for std::function
 #include <thread>           // for std::this_thread
 
 #include "prelab/prelab_fpga.h"
+#include "wrapping_counter.h"
 
 
 // Using anonymous namespace to given symbols internal linkage.
@@ -36,82 +35,6 @@ constexpr std::chrono::duration REFRESH_PERIOD = 1ms;
  * The state of the board's switches that signals the program to exit.
  */
 constexpr Register SWITCH_EXIT_SENTINEL = 0;
-
-/**
- * A counter over an interval [0,max] for some max that wraps around its
- * endpoints.
- */
-class WrappedCounter {
-    /**
-     * Integral type used to represent this counter's value.
-     */
-    using Count = std::uint64_t;
-
-    /**
-     * The current state of the counter.
-     */
-    Count m_couter{0};
-
-    /**
-     * The maximum value that the counter can reached before wrapping to 0.
-     */
-    const Count m_max;
-
-  public:
-    /**
-     * Constructs a counter that wraps upon advancing past the given maximum.
-     *
-     * @param max Maximum counter value.
-     */
-    explicit WrappedCounter(Count max) : m_max{max} {}
-
-    /**
-     * Converts this counter into an integral value.
-     *
-     * We allow this conversion to occur implicitly for simplicity.
-     *
-     * @return Counter state.
-     */
-    operator Count() const { return m_couter; }
-
-    /**
-     * Applies the given callable to the internal counter and stores the
-     * result, modulo (this counter max value + 1), as the new counter value.
-     *
-     * @param func Callable to mutate the internal counter.
-     */
-    void apply(std::function<Count(Count)> func)
-    {
-        auto new_counter = func(m_couter);
-        m_couter = new_counter % (m_max + 1);
-    }
-
-    Count operator++()
-    {
-        m_couter = m_couter == m_max ? 0 : m_couter + 1;
-        return m_couter;
-    }
-
-    Count operator--()
-    {
-        m_couter = m_couter == 0 ? m_max : m_couter - 1;
-        return m_couter;
-    }
-
-    Count operator++(int)
-    {
-        auto tmp = m_couter;
-        ++(*this);
-        return tmp;
-    }
-
-    Count operator--(int)
-    {
-        auto tmp = m_couter;
-        --(*this);
-        return tmp;
-    }
-};
 
 void run_button_demo(VirtualMappingBase virtual_base);
 
@@ -132,7 +55,7 @@ namespace {
 void run_button_demo(VirtualMappingBase virtual_base)
 {
     // Counter holding the state to be written to the board's LEDs.
-    WrappedCounter counter{(1u << LED_COUNT) - 1};
+    WrappingCounter counter{(1u << LED_COUNT) - 1};
 
     // The state of the DE1SoC's button's during the previous cycle.
     auto previous_button{PushButton::None};
@@ -195,7 +118,6 @@ void run_button_demo(VirtualMappingBase virtual_base)
 
         std::this_thread::sleep_for(REFRESH_PERIOD);
     }
-
 }
 
 } // end namespace
