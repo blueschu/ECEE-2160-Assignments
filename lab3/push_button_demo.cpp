@@ -14,7 +14,7 @@
  */
 
 #include <chrono>           // for std::chrono::duration
-#include <stdexcept>        // for std::domain_error
+#include <functional>       // for std::function
 #include <thread>           // for std::this_thread
 
 #include "prelab/prelab_fpga.h"
@@ -30,6 +30,11 @@ using namespace std::literals::chrono_literals;
  * The period of time elapsed between button reads.
  */
 constexpr std::chrono::duration REFRESH_PERIOD = 1ms;
+
+/**
+ * The state of the board's switches that signals the program to exit.
+ */
+constexpr Register SWITCH_EXIT_SENTINEL = 0;
 
 /**
  * A counter over an interval [0,max] for some max that wraps around its
@@ -60,34 +65,25 @@ class WrappedCounter {
     explicit WrappedCounter(Count max) : m_max{max} {}
 
     /**
-     * Returns the counter state of the counter.
+     * Converts this counter into an integral value.
+     *
+     * We allow this conversion to occur implicitly for simplicity.
      *
      * @return Counter state.
      */
-    Count value() const { return m_couter; }
+    operator Count() const { return m_couter; }
 
     /**
-     * Returns the maximum value of the counter.
+     * Applies the given callable to the internal counter and stores the
+     * result, modulo (this counter max value + 1), as the new counter value.
      *
-     * @return Max value.
+     * @param func Callable to mutate the internal counter.
      */
-    Count max() const { return m_max; }
-
-    /**
-     * Sets the counter to the given value.
-     *
-     * @param value New counter value.
-     * @throws domain_error if the new value does not fall within the
-     *          interval of this counter.
-     */
-    void set_value(Count value)
+    void apply(std::function<Count(Count)> func)
     {
-        if (value > m_max) {
-            throw std::domain_error("counter value cannot exceed maximum");
-        }
-        m_couter = value;
+        auto new_counter = func(m_couter);
+        m_couter = new_counter % (m_max + 1);
     }
-
 
     Count operator++()
     {
@@ -155,41 +151,38 @@ void run_button_demo(VirtualMappingBase virtual_base)
             previous_button = button_press;
 
             switch (button_press) {
-                case (PushButton::None): {
+                case (PushButton::None): { // No action
                     break;
                 }
-                case (PushButton::Button0): {
+                case (PushButton::Button0): { // Increment the LEDs
                     ++counter;
                     break;
                 }
-                case PushButton::Button1: {
+                case PushButton::Button1: { // Decrement the LEDs
                     --counter;
                     break;
                 }
-                case PushButton::Button2: {
-                    auto new_counter = counter.value() >> 1u;
-                    counter.set_value(new_counter);
+                case PushButton::Button2: { // Shift the LEDs to the right.
+                    counter.apply([](auto count) { return count >> 1u; });
                     break;
                 }
-                case PushButton::Button3: {
-                    auto new_counter = counter.value() << 1u;
-                    // Trim bits that "overflowed" out the of range of valid
-                    // LED states.
-                    new_counter %= (counter.max() + 1);
-                    try {
-                        counter.set_value(new_counter);
-                    } catch (const std::domain_error&) {
-                        counter.set_value(0);
-                    }
+                case PushButton::Button3: { // Shift the LEDs to the left.
+                    counter.apply([](auto count) { return count << 1u; });
                     break;
                 }
                 case PushButton::Multiple: {
-                    // Turn off all LEDs.
-                    counter.set_value(0);
+                    // Set the LEDs to match the state of the switches.
+                    counter.apply([=](auto) {
+                        return ReadAllSwitches(virtual_base);
+                    });
                 }
             }
 
-            WriteAllLeds(virtual_base, static_cast<Register>(counter.value()));
+            WriteAllLeds(virtual_base, static_cast<Register>(counter));
+
+            if (ReadAllSwitches(virtual_base) == SWITCH_EXIT_SENTINEL) {
+                break;
+            }
         }
 
         std::this_thread::sleep_for(REFRESH_PERIOD);
