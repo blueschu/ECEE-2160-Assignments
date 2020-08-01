@@ -1,19 +1,13 @@
 #include "device_control.h"
 
-/// Physical base address of FPGA Devices.
-constexpr inline std::size_t LW_BRIDGE_BASE{0xFF'20'00'00};
-
-/// Length of memory-mapped IO window
-constexpr inline std::size_t LW_BRIDGE_SPAN{0x00'00'50'00};
-
 /// Base offset to LED registers.
-constexpr inline std::size_t LEDR_BASE{0x00'00'00'00};
+constexpr std::size_t LEDR_BASE{0x00'00'00'00};
 
 /// Base offset to switch registers.
-constexpr inline std::size_t SW_BASE{0x00'00'00'40};
+constexpr std::size_t SW_BASE{0x00'00'00'40};
 
 /// Base offset to push button registers.
-constexpr inline std::size_t KEY_BASE{0x00'00'00'50};
+constexpr std::size_t KEY_BASE{0x0000'00'50};
 
 void DeviceControl::Write1Led(std::size_t led_index, bool state)
 {

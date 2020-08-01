@@ -60,7 +60,7 @@ constexpr inline std::size_t SW_BASE{0x00'00'00'40};
 /// Base offset to push button registers.
 constexpr inline std::size_t KEY_BASE{0x00'00'00'50};
 
-/// The number of LEDs on the DE1-SoC board.
+/// The number of LED's on the DE1-SoC board.
 constexpr inline std::size_t LED_COUNT{10};
 
 /// The number of switches on the DE1-SOC board.

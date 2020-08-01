@@ -1,0 +1,88 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{3}
+\def\LABdatedue{July 22nd, 2020}
+\def\LABdatesubmitted{July 22nd, 2020}
+\def\LABtitle{Memory-Mapped I/O and Object-Oriented Programming}
+
+
+\input{../ecee-2160-header.tex}
+\def\LABreportheading{Prelab Assignment for Lab}
+\rhead{\LABcoursetitle\\Prelab for Lab Assignment \LABnumber}
+
+
+
+\begin{document}
+\makelabtitle
+  
+\section*{Summary}
+
+This prelab assignment consisted of three parts. The first part involved preparing explanations of several C-style functions for memory-mapped I/O that were prepared by the instructor. The second and third parts involved implementing functions for controlling the state of the FPGA board's LEDs and for reading the state of the FPGA board's switches. 
+
+\section*{Submission}
+
+\subsection*{Part A}
+
+\begin{description}
+    \item[\texttt{RegisterWrite()}] This function helps facilitate writing values to virtual addresses that have been mapped to hardware devices. The expression \texttt{pBase + reg\_offset} is an instance of pointer arithmetic that results in a pointer referencing a memory address $n$ bytes\footnote{We use the term \emph{bytes} in the C++ sense, not in the traditional sense meaning 8 bits \cite[\S4.4c1]{open-std-N4659}.} from \texttt{pBase}, where $n = \texttt{reg\_offset}$.  This expression is then cast (using an implicit \texttt{reinterpret\_cast}) to \texttt{volatile unsigned int*}. The \texttt{volatile} qualifier is used to indicate the reading or writing from the expression may have a side effect that the compiler cannot be aware of (such as manipulating the state of a hardware device). This qualifier ensures that the compiler does not attempt to optimize aware hardware interactions \cite[4.6c7.1]{open-std-N4659}. The pointer expression is then dereferenced, and the contents of the variable \texttt{value} are assigned to the referenced region of memory. This assignment involves the implicit conversion of \texttt{value} from \texttt{int} to  \texttt{unsigned int} \cite[7.8c2]{open-std-N4659}.
+    
+    \item[\texttt{RegisterRead()}] This function helps facilitate reading values from virtual addresses that have been mapped to hardware devices. The internal expressions in this function are identical to those discussed in the explanation of \texttt{RegisterWrite()} above. The \texttt{volatile unsigned int*} expression produced is deferenced and read. The value obtained from the hardware access is then implicitly converted into a signed integer and returned.
+    
+    \item[\texttt{Initialize()}] This function has two discrete purposes. First, it attempts to open the character device file \texttt{/dev/mem} \cite{man-dev-meme} using the \texttt{open()} function from \texttt{fcntl.h}. If the function fails to open the file, the program is terminated with a non-zero exit status. Second, the function obtains an $n$-byte wide physical-memory-to-virtual memory mapping using the function \texttt{mmap}, where $n=\texttt{LW\_BRIDGE\_SPAN}$. This memory is requested with read and write access, as indicated by the flags \texttt{PROT\_READ} and \texttt{PROT\_WRITE} \cite{man-mmap}. If the function fails to acquire a memory mapping, the program is terminated with non-zero exit status.
+    
+    \item[\texttt{Finalize()}] This function frees the memory mapping acquire by \texttt{Initialize()}. The return value of \texttt{munmap()} is non-zero if the deallocation was unsuccessful. In this event, the program is terminated with non-zero exit status.
+\end{description}
+
+\subsection*{Parts B and C}
+This part involved writing two functions, each of which had a prescribed signature:
+\begin{enumerate}
+    \item a function that could control the sate of an individual LEDs on the DE1-SoC board, and
+    \item a function that could read the state of an individual switch on the DE1-SoC board.
+\end{enumerate}
+The implementations for both of these function are provided in the listing below.
+
+\begin{lstlisting}[style=labreportstyle-c++]
+#include<cassert>   
+
+void Write1Led(char* pBase, int ledNum, int state)
+{
+    // Ensure that the provided LED index is valid.
+    assert(ledNum >=0 && ledNum <=9);
+    
+    // Bit mask identifying the controlling bit for the specified LED.
+    const unsigned int led_mask{1u << static_cast<unsigned int>(ledNum)};
+    // The current state of the LEDs.
+    unsigned int led_state = RegisterRead(pBase, LEDR_BASE);
+    
+    if (state) { // Set an LED to ON.
+        led_state |= led_mask;
+    } else { // Set an LED to OFF.
+        led_state &= ~led_mask;
+    }
+
+    RegisterWrite(pBase, LEDR_BASE, static_cast<int>(led_state));
+}
+
+int Read1Switch(char* pBase, int swicthNum)
+{
+    assert(swicthNum >=0 && swicthNum <=9);
+    
+    // The current state of the switches.
+    unsigned int switch_state = RegisterRead(pBase, SW_BASE);
+    
+    // Shift the switch state so that the target switch's bit is the LSB.
+    switch_state >>= static_cast<unsigned int>(swicthNum);
+    
+    // Return the state of the LSB.
+    return static_cast<int>(switch_state & 1u);
+}
+\end{lstlisting}
+
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab-3.bib}
+
+\bibliographystyle{unsrt}
+
+
+\end{document}

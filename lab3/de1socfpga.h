@@ -1,8 +1,9 @@
 /**
  * ECEE 2160 Lab Assignment 3 DE1-SoC interface class.
  *
- * Many symbols declared in this file are repeated in `prelab/prelab_fgpa.h`.
- * These two interfaces should not be used simultaneously.
+ * This file is an "object oriented" interface that replaces the utilities
+ * defined in `prelab/prelab_fgpa.h`. These two interfaces should not be used
+ * simultaneously.
  *
  * Completed for lab assignment 3.5.
  *

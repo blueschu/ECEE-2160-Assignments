@@ -16,7 +16,7 @@
 #include <iostream>
 
 // Define to test the LED mapped i/o utilities.
-//#define TEST_LEDS
+#define TEST_LEDS
 
 // Define to test the switch mapped i/o utilities.
 #define TEST_SWITCHES
@@ -27,11 +27,10 @@ int main()
 
 #ifdef TEST_LEDS
     std::cout << "=== Testing LEDs ===\n";
-    while (true) {
-        std::size_t led_index;
-        bool led_state;
-        std::cin >> led_index >> led_state;
-
+    std::size_t led_index;
+    bool led_state;
+    while (std::cin >> led_index >> led_state) {
+        std::cout << "Enter (led index) (state): ";
         try {
             std::cout << "Setting LED #" << led_index << " to "
                       << (led_state ? "ON" : "OFF") << '\n';
@@ -45,10 +44,9 @@ int main()
 
 #ifdef TEST_SWITCHES
     std::cout << "=== Testing switches ===\n";
-    while (true) {
-        std::size_t switch_index;
-        std::cin >> switch_index;
-
+    std::size_t switch_index;
+    while (std::cin >> switch_index) {
+        std::cout << "Enter (switch index): ";
         try {
             const bool switch_state = Read1Switch(virtual_base, switch_index);
             std::cout << "Switch " << switch_index << " = " << switch_state << '\n';

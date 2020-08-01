@@ -1,0 +1,241 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{3}
+\def\LABtitle{Memory-Mapped I/O and Object-Oriented Programming}
+\def\LABdatedue{July 31st, 2020}
+\def\LABdatesubmitted{July 31st, 2020}
+\def\LABabstract{\small This lab served as an introduction to using memory-mapped I/O to communicate with hardware devices from software applications. The POSIX API was used establish a physical-to-virtual memory mapping on the DE1-SoC board. Basic C++ programs were then developed to drive interactions between the DE1-SoC's hardware devices.}
+
+\input{../ecee-2160-header.tex}
+
+\begin{document}
+\makelabtitle
+
+\section*{Introduction}
+
+This lab was an introduction to developing C++ programs that can interact with embedded hardware devices. The POSIX API \cite{wiki:posix} was used to establish a mapping between the virtual address space accessible in a C++ program and the physical address on the DE1-SoC board. This mapping was then used to implement several basic C++ programs that used hardware devices as either input sources or output destinations.
+
+
+\section*{Lab Discussion}
+
+\subsection*{Materials}
+
+The following materials were used in this lab
+\begin{enumerate}
+    \item Host computer (Linux Mint 19.3, x86\_64)
+    \item DE1-SoC board (de1soclinux, armv7l)
+\end{enumerate}
+
+\subsection*{Software}
+The following software was installed on the host machine.
+\begin{enumerate}
+    \item \texttt{arm-linux-gnueabihf-g++} --- GNU C++ compiler for the armhf architecture (v7.5.0)
+    \item \texttt{ssh} --- OpenSSH secure shell client
+    \item \texttt{scp} --- Secure file copy client
+\end{enumerate}
+
+Details regarding the configuration of the C++ compiler for cross-compiling to the DE1-SoC board are discussed in \cite{report-0}.
+
+\subsection*{Prelab Assignment}
+
+This prelab assignment consisted of three parts. The first part involved preparing explanations of several C-style functions for memory-mapped I/O that were prepared by the instructor. The second and third parts involved implementing functions for controlling the state of the FPGA board's LEDs and for reading the state of the FPGA board's switches. 
+
+
+\subsection*{Part A}
+
+\begin{description}
+    \item[\texttt{RegisterWrite()}] This function helps facilitate writing values to virtual addresses that have been mapped to hardware devices. The expression \texttt{pBase + reg\_offset} is an instance of pointer arithmetic that results in a pointer referencing a memory address $n$ bytes\footnote{We use the term \emph{bytes} in the C++ sense, not in the traditional sense meaning 8 bits \cite[\S4.4c1]{open-std-N4659}.} from \texttt{pBase}, where $n = \texttt{reg\_offset}$.  This expression is then cast (using an implicit \texttt{reinterpret\_cast}) to \texttt{volatile unsigned int*}. The \texttt{volatile} qualifier is used to indicate the reading or writing from the expression may have a side effect that the compiler cannot be aware of (such as manipulating the state of a hardware device). This qualifier ensures that the compiler does not attempt to optimize aware hardware interactions \cite[4.6c7.1]{open-std-N4659}. The pointer expression is then dereferenced, and the contents of the variable \texttt{value} are assigned to the referenced region of memory. This assignment involves the implicit conversion of \texttt{value} from \texttt{int} to  \texttt{unsigned int} \cite[7.8c2]{open-std-N4659}.
+    
+    \item[\texttt{RegisterRead()}] This function helps facilitate reading values from virtual addresses that have been mapped to hardware devices. The internal expressions in this function are identical to those discussed in the explanation of \texttt{RegisterWrite()} above. The \texttt{volatile unsigned int*} expression produced is deferenced and read. The value obtained from the hardware access is then implicitly converted into a signed integer and returned.
+    
+    \item[\texttt{Initialize()}] This function has two discrete purposes. First, it attempts to open the character device file \texttt{/dev/mem} \cite{man-dev-meme} using the \texttt{open()} function from \texttt{fcntl.h}. If the function fails to open the file, the program is terminated with a non-zero exit status. Second, the function obtains an $n$-byte wide physical-memory-to-virtual memory mapping using the function \texttt{mmap}, where $n=\texttt{LW\_BRIDGE\_SPAN}$. This memory is requested with read and write access, as indicated by the flags \texttt{PROT\_READ} and \texttt{PROT\_WRITE} \cite{man-mmap}. If the function fails to acquire a memory mapping, the program is terminated with non-zero exit status.
+    
+    \item[\texttt{Finalize()}] This function frees the memory mapping acquire by \texttt{Initialize()}. The return value of \texttt{munmap()} is non-zero if the deallocation was unsuccessful. In this event, the program is terminated with non-zero exit status.
+\end{description}
+
+\subsection*{Parts B and C}
+This part involved writing two functions, each of which had a prescribed signature:
+\begin{enumerate}
+    \item a function that could control the sate of an individual LEDs on the DE1-SoC board, and
+    \item a function that could read the state of an individual switch on the DE1-SoC board.
+\end{enumerate}
+The implementations for both of these function are provided in the listing below.
+
+\begin{lstlisting}[style=labreportstyle-c++]
+#include<cassert>   
+
+void Write1Led(char* pBase, int ledNum, int state)
+{
+    // Ensure that the provided LED index is valid.
+    assert(ledNum >=0 && ledNum <=9);
+    
+    // Bit mask identifying the controlling bit for the specified LED.
+    const unsigned int led_mask{1u << static_cast<unsigned int>(ledNum)};
+    // The current state of the LEDs.
+    unsigned int led_state = RegisterRead(pBase, LEDR_BASE);
+    
+    if (state) { // Set an LED to ON.
+        led_state |= led_mask;
+    } else { // Set an LED to OFF.
+        led_state &= ~led_mask;
+    }
+
+    RegisterWrite(pBase, LEDR_BASE, static_cast<int>(led_state));
+}
+
+int Read1Switch(char* pBase, int swicthNum)
+{
+    assert(swicthNum >=0 && swicthNum <=9);
+    
+    // The current state of the switches.
+    unsigned int switch_state = RegisterRead(pBase, SW_BASE);
+    
+    // Shift the switch state so that the target switch's bit is the LSB.
+    switch_state >>= static_cast<unsigned int>(swicthNum);
+    
+    // Return the state of the LSB.
+    return static_cast<int>(switch_state & 1u);
+}
+\end{lstlisting}
+
+
+
+\section*{Results and Analysis}
+
+The utility functions prepared during the prelab assignment were refactored into a small library that could be linked against by all executables produced during the lab. During this transition, the signatures of the functions were modified as permitted by the instructor, but the names of all functions were kept the same.
+
+\subsection*{Assignment 1}
+
+This assignment consisted of writing a short program to test the function \texttt{Write1Led()} and \texttt{Read1Switch()} from the prelab assignment. This program is provided in Listing~\ref{lst:prelab/prelab.cpp} in the Appendix.
+
+\subsection*{Assignment 2 and 3}
+
+These assignments consisted of writing functions to set the state of all of the DE1-SoC board's LEDs and to read the state of all of the board's switches, respectively. Per the naming conventions established in the lab instructions, these functions were implemented as \texttt{WriteAllLeds()} and \texttt{ReadAllSwitches()}, respectively, which can be founded in Listing~\ref{lst:prelab/prelab\string_fpga.cpp} in the Appendix. The signatures of these functions were modified to match  of the memory mapped I/O utilities discussed previously.
+
+The function \texttt{WriteAllLeds()} was tested by exhaustively iterating through all possible LED states and visually inspecting the resulting states of the LEDs on the board. This was accomplished using the following program:
+\begin{lstlisting}[style=labreportstyle-c++]
+#include <chrono>
+#include <thread>
+
+#include "prelab/prelab_fpga.h"
+
+using namespace std::literals::chrono_literals;
+
+int main() {
+    auto [virtual_base, fd] = Initialize();
+
+    constexpr auto delay = 300ms;
+    constexpr Register max_led_state = (1u << LED_COUNT) - 1;
+    
+    for (Register state{0}; state < max_led_state; ++state) {
+        WriteAllLeds(virtual_base, state);
+        std::this_thread::sleep_for(delay);
+    }
+    
+    Finalize(virtual_base, fd);
+}
+\end{lstlisting}
+
+This program was compiled on the host computer using following shell command.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion \
+>     -D_GLIBCXX_USE_CXX11_ABI=0 \
+>     -o lab3-2-arm ./lab3-2-test.cpp ./prelab/prelab_fpga.cpp
+\end{lstlisting}
+
+The function \texttt{ReadAllSwitches()} was tested manually with the following switch combinations:
+\begin{enumerate}
+    \item Each switch on exclusively. The values returned \texttt{ReadAllSwitches()} were expected to be ascending powers of $2$.
+    \item The first $n$ switches on, for $n=1,\dotsc,10$. Each value returned by \texttt{ReadAllSwitches()} was expected to be the sum of the first $n$ $0$-indexed powers of $2$. That is, $1\mapsto (2^0)$, $2\mapsto (2^0 + 2^1)$, and so on.
+\end{enumerate}
+
+Both functions expected their expected behavior.
+
+\subsection*{Assignment 4}
+
+This assignment consisted of writing an interactive program that incorporated the LEDs, switches, and push buttons on the DE1-SoC. This program used the LEDs to display a binary representation of a counter holding an integer value from the interval $[0, 1023]$. In this program, the four push buttons (``KEYs'') on the DE1-SoC were assigned the following meanings:
+\begin{description}[labelindent=0.5cm]
+    \item[KEY0:] Increment the counter by 1, wrapping as necessary.
+    \item[KEY1:] Decrement the counter by 1, wrapping as necessary.
+    \item[KEY2:] Bitwise shift the counter right one position, filling in \texttt{0}s on the left.
+    \item[KEY3:] Bitwise shift the counter left one position, filling in \texttt{0}s on the right.
+    \item[Multiple Keys:] Set the counter to the value specified by the current state of the switches.
+\end{description}
+
+In order to allow the program to terminate without an external interrupt signal, and additional condition was added to the ``Multiple Keys'' behavior: ``if the all of the switches are in their ``off'' position, exit gracefully.''
+
+The program for this assignment is provided in Listing~\ref{lst:push\string_button\string_demo.cpp} below. An additional utility class called \texttt{WrappingCouner} was introduced to encapsulate the required cyclic counter behavior. This class can be found in Listing~\ref{lst:wrapping\string_counter.h}.
+
+The complete sources for this assignment were compiled on the host computer using following shell command.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion \
+>     -D_GLIBCXX_USE_CXX11_ABI=0 \
+>     -o lab3-4-arm ./push_buttin_demo.cpp ./prelab/prelab_fpga.cpp
+\end{lstlisting}
+
+The behavior of this program while executing on the DE1-SoC board is demonstrated in the video file named \texttt{schubert-ecee2160-lab3-4-demo.MOV} provided with this report.
+
+\subsection*{Assignment 5}
+This assignment consisted of re-writing the program from Assignment 4 to use ``object oriented programming.''
+
+The class \texttt{DE1SoCfpga} specified in the assignment instructions is provided in Listings~\ref{lst:de1socfpga.h} and~\ref{lst:de1socfpga.cpp} below. The class \texttt{LEDControl} described in the assignment instructions was renamed to \texttt{DeviceControl}, and is implemented in Listings~\ref{lst:device\string_control.h} and~\ref{lst:device\string_control.cpp} below. 
+
+The complete sources for this assignment were compiled on the host computer using following shell command.
+
+\begin{lstlisting}[style=labreportstyle-sh]
+$ arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion \
+>     -D_GLIBCXX_USE_CXX11_ABI=0 \
+>     -o lab3-5-arm ./push_buttin_demo_oo.cpp ./de1socfpga.cpp ./device_control.cpp
+\end{lstlisting}
+
+\section*{Conclusion}
+
+This lab illustrated the used of memory-mapped I/O to facilitate interaction with hardware devices in C++ programs. Both procedural ``C-style'' and object-oriented ``C++-style'' interfaces were developed for interacting with the suite of hardware devices available on the DE1-SoC board. Basic interactive programs were developed to demonstrate software interactions with the LEDs, switches, and push buttons on the board. Common issues with programming on embedded devices, such as acting on hardware states changes only once, were introduced and mitigated in C++ programs.
+
+This lab could be extended by abstracting the interface of \texttt{DE1SoCfpga} from Assignment~5 into an abstract class. This would allow the utilities defined during this lab to be more easily adapted to running on an embedded device other than the DE1-SoC. Similarly, exposing an abstract interface for hardware interactions would enable users to create ``mock'' FGPA handle classes for the purposes of automated testing and debugging.
+
+
+\clearpage
+\section*{Appendix}
+\renewcommand{\thelstlisting}{A.\arabic{lstlisting}}
+
+\includecode{instructor/LedNumber.cpp}
+
+\includecode{prelab/prelab\string_fpga.h}
+
+\includecode{prelab/prelab\string_fpga.cpp}
+Referenced \cite{so-safe-unaligned,so-arm-unaligned}
+
+\includecode{prelab/prelab.cpp}
+Referenced \cite{de1-soc-linux-manual,open-std-N4659}
+
+\includecode{wrapping\string_counter.h}
+Referenced \cite{cppreference-inc-op}
+
+\includecode{push\string_button\string_demo.cpp}
+Referenced \cite{cppreference-thread,cppreference-user-lit,so-sleep,open-std-P0627R0}
+
+\includecode{de1socfpga.h}
+Referenced \cite{stroustrup-c++-core-guidelines}
+
+\includecode{de1socfpga.cpp}
+
+\includecode{device\string_control.h}
+Referenced \cite{stroustrup-c++-core-guidelines}
+
+\includecode{device\string_control.cpp}
+
+\includecode{push\string_button\string_demo\string_oo.cpp}
+
+
+
+
+\clearpage
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab-3.bib}
+
+\bibliographystyle{unsrt}
+\end{document}

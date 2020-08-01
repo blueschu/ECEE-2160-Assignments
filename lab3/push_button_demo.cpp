@@ -10,6 +10,7 @@
  * - https://en.cppreference.com/w/cpp/language/user_literal
  * - https://en.cppreference.com/w/cpp/header/thread
  * - https://stackoverflow.com/questions/1658386/
+ * - http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0627r0.pdf
  *
  */
 
@@ -109,6 +110,11 @@ void run_button_demo(VirtualMappingBase virtual_base)
                 if (switch_state == SWITCH_EXIT_SENTINEL) {
                     run_demo = false;
                 }
+                break;
+            }
+            default: {
+                // All possible button states are enumerated above.
+                __builtin_unreachable();
             }
         }
 

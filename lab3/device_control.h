@@ -55,8 +55,8 @@ class DeviceControl {
     // Constructor
     explicit DeviceControl(DE1SoCfpga fgpa) : m_fpga{std::move(fgpa)} {}
 
-    // No destructor defined per "Rule of 0" [C.20 from 1].
-    // ~DeviceControl()
+    // No destructor defined per "Rule of 0" [C.20,C.21 from 1].
+    // ~DeviceControl();
 
     /**
      * Sets the LED at the given index to the specified state.
@@ -82,7 +82,7 @@ class DeviceControl {
      *
      * @param leds_state State for all of the LEDs.
      */
-    void WriteAllLeds( DE1SoCfpga::Register leds_state);
+    void WriteAllLeds(DE1SoCfpga::Register leds_state);
 
     /**
      * Reads the state the switches and returns their value as a single integer

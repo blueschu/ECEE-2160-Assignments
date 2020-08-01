@@ -100,6 +100,11 @@ void run_button_demo(DeviceControl& device_control)
                 if (switch_state == SWITCH_EXIT_SENTINEL) {
                     run_demo = false;
                 }
+                break;
+            }
+            default: {
+                // All possible button states are enumerated above.
+                __builtin_unreachable();
             }
         }
 
