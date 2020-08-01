@@ -9,7 +9,13 @@
 
 class DE1SoCfgpa {
 
-    posix_api::MemoryMapping m_memory_mapping;
+    /**
+     * Physical-to-virtual memory mapping on the DE1-SoC board.
+     *
+     * Declared as mutable since it was desirable to still allow register
+     * reads from logically constant instances of DE1SoCfgpa.
+     */
+    mutable posix_api::MemoryMapping m_memory_mapping;
 
   public:
 
@@ -30,10 +36,9 @@ class DE1SoCfgpa {
 
     DE1SoCfgpa();
 
-    Register ReadRegister(std::size_t offset)
-    {
-        return *m_memory_mapping.access_memory_unchecked<Register>(offset);
-    }
+    Register ReadRegister(std::size_t offset) const;
+
+    void WriteRegister(std::size_t offset, Register value);
 
 };
 

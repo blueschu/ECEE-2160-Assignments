@@ -35,7 +35,6 @@ namespace raw_posix {
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-
 }
 
 /**
@@ -113,19 +112,38 @@ class File {
 
 };
 
+/**
+ * Memory protection flags exposed by sys/mman [mman].
+ *
+ * We explicitly define the underlying type to be `int` since that is the
+ * type that is ultimately accepted by mmap for memory protection flags.
+ *
+ * Note: we only define flags for the symbolic constants used in this lab.
+ */
 enum class MemoryFlag : int {
     Read = PROT_READ,
     Write = PROT_WRITE,
 };
 
+/**
+ * Error class thrown by MemoryMapping for invalid memory operations.
+ */
 class MemoryMappingError : public std::runtime_error {
+    // Use base class constructor.
     using std::runtime_error::runtime_error;
 };
 
 class MemoryMapping {
 
+    /**
+     * Pointer type indicating the start of a mapping between physical memory
+     * and virtual memory acquired from mmap.
+     */
     void* m_virtual_base{MAP_FAILED};
 
+    /**
+     * Width of the memory mapping.
+     */
     std::size_t m_map_span{0};
 
   public:
@@ -143,7 +161,6 @@ class MemoryMapping {
      * > more mappings to the file.
      *
      * This constructor always used MAP_SHARED for the memory sharing flag.
-     *
      *
      * @param fd
      * @param bridge_span
@@ -204,6 +221,11 @@ class MemoryMapping {
         m_virtual_base = std::exchange(other.m_virtual_base, MAP_FAILED);
         m_map_span = std::exchange(other.m_map_span, 0);
         return *this;
+    }
+
+    // Boolean conversion operator.
+    explicit operator bool() {
+        return m_virtual_base != MAP_FAILED;
     }
 
     template<typename T>
