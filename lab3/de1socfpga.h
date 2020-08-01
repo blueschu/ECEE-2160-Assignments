@@ -59,7 +59,7 @@ class DE1SoCfpga {
     using VirtualMappingBase = void*;
 
     /**
-     * A file descriptor for interface with fnctl.h.
+     * A file descriptor for interfacing with fcntl.h.
      */
     using FileDescriptor = int;
 

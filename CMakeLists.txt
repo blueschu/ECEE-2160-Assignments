@@ -20,6 +20,7 @@ add_subdirectory(lab0)
 add_subdirectory(lab1)
 add_subdirectory(lab2)
 add_subdirectory(lab3)
+add_subdirectory(lab4)
 
 # Use C++14 for homework targets
 set(CMAKE_CXX_STANDARD 14)

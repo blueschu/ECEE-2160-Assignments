@@ -102,7 +102,7 @@ DE1SoCfpga::DE1SoCfpga()
 
 DE1SoCfpga::~DE1SoCfpga() noexcept
 {
-    if (m_virtual_base != nullptr) {
+    if (m_virtual_base != MAP_FAILED) {
 
         // Deallocate the mapped memory.
         if (posix_api::munmap(m_virtual_base, LW_BRIDGE_SPAN) != 0) {
@@ -110,7 +110,7 @@ DE1SoCfpga::~DE1SoCfpga() noexcept
             std::terminate();
         }
         // Set base pointer to nullptr to reduce chance of accidental misuse.
-        m_virtual_base = nullptr;
+        m_virtual_base = MAP_FAILED;
     }
 
     if (m_fd != FNCTL_OPEN_FAILED) {

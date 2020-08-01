@@ -136,8 +136,8 @@ void Finalize(VirtualMappingBase& virtual_base, FileDescriptor& fd)
         std::cout << "ERROR: munmap() failed.\n";
         std::exit(EXIT_FAILURE);
     }
-    // Set base pointer to nullptr to reduce chance of accidental misuse.
-    virtual_base = nullptr;
+    // Set base pointer to failed sentinel to reduce chance of accidental misuse.
+    virtual_base = MAP_FAILED;
 
     // Release the file descriptor for /dev/mem/.
     posix_api::close(fd);
