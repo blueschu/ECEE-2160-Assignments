@@ -15,17 +15,28 @@
  * [so-mmap-1]  https://stackoverflow.com/questions/55344174/c-close-a-open-file-read-with-mmap
  * [so-mmap-2]  https://stackoverflow.com/questions/17490033/do-i-need-to-keep-a-file-open-after-calling-mmap-on-it
  * [so-unaligned-1] https://stackoverflow.com/questions/13881487/should-i-worry-about-the-alignment-during-pointer-casting
- * [so-unaligned-2]  https://stackoverflow.com/questions/32062894/take-advantage-of-arm-unaligned-memory-access-while-writing-clean-c-code
+ * [so-unaligned-2] https://stackoverflow.com/questions/32062894/take-advantage-of-arm-unaligned-memory-access-while-writing-clean-c-code
+ * [cpp-underlying] https://en.cppreference.com/w/cpp/types/underlying_type
  *
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_POSIX_API_H
 #define ECEE_2160_LAB_REPORTS_POSIX_API_H
 
+// When defined, debug info will be printed to standard error if an error
+// is encountered.
+//#define POSIX_API_PRINT_DEBUG
+
 #include <cstddef>          // for std::byte
-#include <stdexcept>
-#include <type_traits>
-#include <utility>
+#include <stdexcept>        // for std::runtime_error
+#include <type_traits>      // for std::underlying_type
+#include <utility>          // for std::exchange
+
+#ifdef POSIX_API_PRINT_DEBUG
+#include <iostream>
+#include <cerrno>
+#include <cstring>
+#endif
 
 namespace posix_api { // Note: the namespace `posix` is reserved.
 
@@ -65,18 +76,25 @@ class File {
     constexpr static inline Descriptor k_failed{-1};
 
     /**
-     * A file descriptor acquired from posix api.
+     * A file descriptor acquired from POSIX api.
      */
     Descriptor m_fd;
 
   public:
 
+    /**
+     * Constructs a `File` holding a POSIX file descriptor for the given file.
+     *
+     * @param file_name C-string file name.
+     * @param flags POSIX file opening flags.
+     */
     File(const char* file_name, FileFlag flags)
     {
         using Flag = std::underlying_type<FileFlag>::type;
         m_fd = raw_posix::open(file_name, static_cast<Flag>(flags));
     }
 
+    // Destructor.
     ~File() noexcept
     {
         if (m_fd != k_failed) {
@@ -100,11 +118,15 @@ class File {
         return *this;
     }
 
+    /**
+     * Returns this File's posix file descriptor.
+     */
     Descriptor raw_descriptor() const
     {
         return m_fd;
     }
 
+    // Boolean conversion operator.
     explicit operator bool() const
     {
         return m_fd != k_failed;
@@ -133,6 +155,10 @@ class MemoryMappingError : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+/**
+ * A mapping between this process' virtual address space and the contents
+ * of some file.
+ */
 class MemoryMapping {
 
     /**
@@ -150,6 +176,7 @@ class MemoryMapping {
     MemoryMapping() = default;
 
     /**
+     * Creates a new memory mapping into the given file.
      *
      * The file descriptor can be safely passed by reference since we don't
      * care if it is closed while the MemoryMapping instance is in use. Per the
@@ -160,46 +187,47 @@ class MemoryMapping {
      * > on that file descriptor. This reference is removed when there are no
      * > more mappings to the file.
      *
-     * This constructor always used MAP_SHARED for the memory sharing flag.
+     * This constructor always uses MAP_SHARED for the memory sharing flag.
      *
-     * @param fd
-     * @param bridge_span
-     * @param protection_flags
-     * @param bridge_base
+     * If this constructor fails to acquire a memory mapping, using operator
+     * bool() on this object will return `false`.
+     *
+     * @param fd POSIX file to be mapped.
+     * @param bridge_span Mapping span.
+     * @param protection_flags POSIX memory protection flags
+     * @param bridge_base Starting address for the memory mapping.
      */
-    explicit MemoryMapping(
+    MemoryMapping(
         const File& fd,
         std::size_t bridge_span,
         MemoryFlag protection_flags,
         std::size_t bridge_base
-    ) : m_map_span{bridge_base}
+    ) : m_map_span{bridge_span}
     {
-        using ProtectionFlag = std::underlying_type<MemoryFlag>::type;
+        using Flag = std::underlying_type<MemoryFlag>::type;
 
         // Get a mapping from physical addresses to virtual addresses.
         m_virtual_base = raw_posix::mmap(
             // Let the kernel choose the virtual address.
             nullptr,
             bridge_span,
-            static_cast<ProtectionFlag>(protection_flags),
+            static_cast<Flag>(protection_flags),
             MAP_SHARED,
             fd.raw_descriptor(),
-            static_cast<off_t>(m_map_span)
+            static_cast<off_t>(bridge_base)
         );
-
-        // Check for errors in acquiring memory mapping.
-        // todo decide on error handling
-        if (m_virtual_base == MAP_FAILED) {
-            throw MemoryMappingError("failed to acquire memory mapping");
-        }
     }
 
+    // Destructor
     ~MemoryMapping() noexcept
     {
         if (m_virtual_base != MAP_FAILED) {
 
             // Deallocate the mapped memory.
             if (raw_posix::munmap(m_virtual_base, m_map_span) != 0) {
+#ifdef POSIX_API_PRINT_DEBUG
+                std::cerr << "Failed to deallocate memory mapping: " << std::strerror(errno) << '\n';
+#endif
                 // Destructor cannot fail; terminate program.
                 std::terminate();
             }
@@ -223,8 +251,11 @@ class MemoryMapping {
         return *this;
     }
 
-    // Boolean conversion operator.
-    explicit operator bool() {
+    /**
+     * Returns `true` if this object holds a valid memory mapping into a file.
+     */
+    explicit operator bool()
+    {
         return m_virtual_base != MAP_FAILED;
     }
 
@@ -245,7 +276,7 @@ class MemoryMapping {
         // byte-based pointer arithmetic.
         const auto offset_ptr = static_cast<std::byte*>(m_virtual_base) + offset;
 
-        // Check of the offset pointer is properly aligned [so-unaligned-1].
+        // Check if the offset pointer is properly aligned [so-unaligned-1].
         if (0 != reinterpret_cast<std::uintptr_t>(offset_ptr) % alignof(T)) {
             throw MemoryMappingError("memory access unaligned");
         }
