@@ -4,13 +4,10 @@
 
 #include "led_array.h"
 
-#include "de1soc_properties.h"
-
 template<std::size_t N>
 void LedArray<N>::update_leds()
 {
-    auto reg_value = static_cast<Register>(m_led_state.to_ulong());
-    write_register(de1soc::ledr_base, reg_value);
+    write_register(m_base_offset, m_led_state);
 }
 
 template<std::size_t N>
@@ -32,7 +29,7 @@ void LedArray<N>::write(std::size_t index, bool state)
 }
 
 template<std::size_t N>
-void LedArray<N>::write_all(unsigned long led_bits)
+void LedArray<N>::write_all(Register led_bits)
 {
     m_led_state = led_bits;
     update_leds();

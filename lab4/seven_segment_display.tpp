@@ -7,24 +7,26 @@
 #include <stdexcept>            // for std::out_of_range, std::domain_error
 #include <cctype>               // for std::isdigit, std::isxdigit
 
-#include "de1soc_properties.h"
-
-void SevenSegmentDisplay::update_display()
+template<std::size_t N>
+void SevenSegmentDisplay<N>::update_display()
 {
-    write_register(de1soc::hex3_hex0_base, m_register_values[0].reg);
-    write_register(de1soc::hex5_hex4_base, m_register_values[1].reg);
+    for (std::size_t i{0}; i < k_register_count; ++i) {
+        write_register(m_register_offsets[i], m_register_values[i].reg);
+    }
 }
 
-void SevenSegmentDisplay::clear_all()
+template<std::size_t N>
+void SevenSegmentDisplay<N>::clear_all()
 {
     // Set all displays to zero.
     m_register_values = {};
     update_display();
 }
 
-void SevenSegmentDisplay::clear_display(std::size_t index)
+template<std::size_t N>
+void SevenSegmentDisplay<N>::clear_display(std::size_t index)
 {
-    if (index >= de1soc::seven_segment_display_count) {
+    if (index >= N) {
         throw std::out_of_range("index must not exceed seven-segment display range");
     }
 
@@ -32,9 +34,10 @@ void SevenSegmentDisplay::clear_display(std::size_t index)
     update_display();
 }
 
-void SevenSegmentDisplay::write_display_character(std::size_t index, char character)
+template<std::size_t N>
+void SevenSegmentDisplay<N>::write_display_character(std::size_t index, char character)
 {
-    if (index >= de1soc::seven_segment_display_count) {
+    if (index >= N) {
         throw std::out_of_range("index must not exceed seven-segment display range");
     }
 
@@ -55,31 +58,17 @@ void SevenSegmentDisplay::write_display_character(std::size_t index, char charac
     update_display();
 }
 
-template<int N> struct S;
-
-void SevenSegmentDisplay::show_number(int number)
+template<std::size_t N>
+void SevenSegmentDisplay<N>::show_number(int number)
 {
-    /// The number of bits of an integer that can be represented per display.
-    constexpr static int bits_per_display{4};
-
-    /// The base of the representation used by the display (hex).
-    constexpr static int display_base{1u << bits_per_display};
-
-    constexpr static int max_display_value =
-        (1u << (bits_per_display * de1soc::seven_segment_display_count)) - 1;
-    constexpr static int min_display_value = -static_cast<int>(
-        (1u << (bits_per_display * (de1soc::seven_segment_display_count - 1))) - 1
-    );
-
-    // Sanity check for min/max display values.
-    static_assert(max_display_value ==  0xFF'FF'FF);
-    static_assert(min_display_value == -0x0F'FF'FF);
+    const auto[min_value, max_value] =  display_range();
+    constexpr int display_base = 16;
 
     // Check that the passed value can be shown on the display.
-    if (number > max_display_value) {
+    if (number > max_value) {
         throw std::domain_error("number exceeds maximum display value");
     }
-    if (number < min_display_value) {
+    if (number < min_value) {
         throw std::domain_error("number less than minimum display value");
     }
 

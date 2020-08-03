@@ -15,11 +15,16 @@
  * This class inherits from DE1SoCHardwareDevice to gain access to
  * memory-mapping I/O utilities per lab instructions.
  *
+ * This class is designed to be de-coupled with the details of the DE1-SoC
+ * board itself. It should be usable on any system with 32-bit little-endian
+ * control registers without any changes.
+ *
  * Note: if this class used DE1SoCHardwareDevice via composition instead of
  * inheritance, we could test this class without an active hardware connection
  * by creating a mock hardware handle. Don't design hierarchies like this in
  * real-world code.
  */
+template<std::size_t N>
 class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     /**
      * The union DisplayRegister requires the DE1-SoC register size to be
@@ -29,6 +34,21 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
 
     /// Integral type used to represent the encoded value of a single display.
     using DisplayValue = std::uint8_t;
+
+    /**
+     * The number of control registers storing the state of the seven-segment
+     * displays.
+     */
+    constexpr static inline std::size_t k_register_count{
+        N % sizeof(Register) == 0
+            ? N / sizeof(Register)
+            : (N / sizeof(Register)) + 1
+    };
+
+    /// Type representing a static array with a length equal to the number
+    /// of seven-segment display control registers.
+    template<typename V>
+    using RegisterArrayMapping = std::array<V, k_register_count>;
 
     /**
      * View into a seven segment display register as either a full DE1-SoC
@@ -83,7 +103,12 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      * This array corresponds to the member variables `reg0_hexValue` and
      * `reg1_hexValue` from the lab instructions.
      */
-    std::array<DisplayRegister, 2> m_register_values{};
+    RegisterArrayMapping<DisplayRegister> m_register_values{};
+
+    /**
+     * The offsets to the control registers for the seven segment dispalys.
+     */
+    RegisterArrayMapping<std::size_t> m_register_offsets;
 
     /**
      * Whether this display is the current logically owner of the seven-segment
@@ -92,7 +117,15 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     bool m_owner{true};
 
   public:
-    SevenSegmentDisplay() = default;
+    /**
+     * Constructs a SevenSegmentDisplay with the given sequence of display
+     * control registers. Each register represents the state of 4 (or fewer)
+     * seven-segment displays.
+     *
+     * @param register_offsets Offsets to seven-segment display control registers.
+     */
+    explicit SevenSegmentDisplay(RegisterArrayMapping<std::size_t> register_offsets)
+        : m_register_offsets{std::move(register_offsets)} {}
 
     ~SevenSegmentDisplay()
     {
@@ -149,7 +182,28 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      */
     void show_number(int number);
 
+    /**
+     * Returns a pair containg the minimum and maximum value that can be
+     * displayed on the seven-segment display.
+     *
+     * @return [min, max] interval for seven-segment display.
+     */
+    constexpr static std::pair<int, int> display_range()
+    {
+        /// The number of bits of an integer that can be represented per display.
+        constexpr std::size_t bits_per_display{4};
+
+        constexpr int max_display_value =
+            (1u << (bits_per_display * N)) - 1;
+        constexpr int min_display_value = -static_cast<int>(
+            (1u << (bits_per_display * (N - 1))) - 1
+        );
+
+        return {min_display_value, max_display_value};
+    }
+
   private:
+
     /**
      * Writes the current display states to the displays registers.
      */
@@ -169,5 +223,11 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     }
 
 };
+
+// Sanity check for min/max display values.
+static_assert(SevenSegmentDisplay<6>::display_range().first == -0x0F'FF'FF);
+static_assert(SevenSegmentDisplay<6>::display_range().second == 0xFF'FF'FF);
+
+#include "seven_segment_display.tpp"
 
 #endif //ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
