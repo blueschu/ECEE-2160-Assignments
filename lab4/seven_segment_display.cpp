@@ -55,6 +55,8 @@ void SevenSegmentDisplay::write_display_character(std::size_t index, char charac
     update_display();
 }
 
+template<int N> struct S;
+
 void SevenSegmentDisplay::show_number(int number)
 {
     /// The number of bits of an integer that can be represented per display.
@@ -66,8 +68,12 @@ void SevenSegmentDisplay::show_number(int number)
     constexpr static int max_display_value =
         (1u << (bits_per_display * de1soc::seven_segment_display_count)) - 1;
     constexpr static int min_display_value = -static_cast<int>(
-        1u << (bits_per_display * (de1soc::seven_segment_display_count - 1) - 1)
+        (1u << (bits_per_display * (de1soc::seven_segment_display_count - 1))) - 1
     );
+
+    // Sanity check for min/max display values.
+    static_assert(max_display_value ==  0xFF'FF'FF);
+    static_assert(min_display_value == -0x0F'FF'FF);
 
     // Check that the passed value can be shown on the display.
     if (number > max_display_value) {
@@ -85,20 +91,20 @@ void SevenSegmentDisplay::show_number(int number)
 
     // Write an unsigned representation of the value to the displays.
     while (pending != 0) {
-        auto mod = pending / display_base;
+        auto mod = pending % display_base;
         pending /= display_base;
 
         // Index of the given hexadecimal character in the display value mapping.
         auto value_index = static_cast<std::size_t>(mod);
 
-        write_display_character(current_display, k_character_values[value_index]);
+        access_display_unchecked(current_display) = k_character_values[value_index];
         ++current_display;
     }
 
     // If the original number was negative, write a negative sign to the
     // right-most unused display.
     if (number < 0) {
-        write_display_character(current_display, k_negative_sign);
+        access_display_unchecked(current_display) = k_negative_sign;
     }
 
     update_display();

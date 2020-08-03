@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "de1socfpga.h"
+#include "de1soc_device.h"
 
 /**
  * The seven segment display on the DE1-SoC board.
@@ -49,6 +49,10 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     // Sanity check for display register size.
     static_assert(sizeof(DisplayRegister) == 4);
 
+    /**
+     * Mapping between [0,15] and the corresponding hexadecimal characters
+     * encoded for the seven-segment displays.
+     */
     constexpr static inline std::array<DisplayValue, 16> k_character_values{
         0b0011'1111, // 0
         0b0000'0110, // 1
@@ -68,6 +72,9 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
         0b0111'0001, // F
     };
 
+    /**
+     * Seven-segment display encoded negative sign.
+     */
     constexpr static inline DisplayValue k_negative_sign{0b0100'0000};
 
     /**
@@ -91,7 +98,7 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     {
         // Clear the seven-segment displays.
         if (m_owner) {
-            clear_all();
+//            clear_all();
         }
     }
 

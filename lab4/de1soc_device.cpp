@@ -4,7 +4,7 @@
 
 // https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 
-#include "de1socfpga.h"
+#include "de1soc_device.h"
 #include "de1soc_properties.h"
 
 DE1SoCHardwareDevice::Register DE1SoCHardwareDevice::read_register(std::size_t offset)

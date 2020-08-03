@@ -44,11 +44,8 @@ constexpr inline std::size_t led_count{10};
 /// The number of switches on the DE1-SOC board.
 constexpr inline std::size_t switch_count{10};
 
-/// The number of push buttons on the DE1-SOC board.
-constexpr inline std::size_t push_button_count{4};
-
 /// The number of seven segment displays on the DE1-SoC board.
 constexpr inline std::size_t seven_segment_display_count{6};
-}
+} // namespace de1soc
 
 #endif //ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
