@@ -2,31 +2,43 @@
 // Created by brian on 8/1/20.
 //
 
+// https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+
 #include "de1socfpga.h"
+#include "de1soc_properties.h"
 
-#include <stdexcept>        // for std::runtime_error
-
-DE1SoCfgpa::DE1SoCfgpa()
+DE1SoCHardwareDevice::Register DE1SoCHardwareDevice::read_register(std::size_t offset)
 {
-    using namespace posix_api;
-
-    auto fd = File("/dev/mem", FileFlag::ReadWrite | FileFlag::Sync);
-    m_memory_mapping = MemoryMapping(
-        fd,
-        LW_BRIDGE_SPAN,
-        MemoryFlag::Write | MemoryFlag::Read,
-        LW_BRIDGE_BASE
-    );
-    if (!m_memory_mapping) {
-        throw std::runtime_error("failed to create memory mapping");
-    }
+    return *get_memory_mapping().access_memory<Register>(offset);
 }
 
-DE1SoCfgpa::Register DE1SoCfgpa::ReadRegister(std::size_t offset) const {
-    return *m_memory_mapping.access_memory<Register>(offset);
+void DE1SoCHardwareDevice::write_register(std::size_t offset, DE1SoCHardwareDevice::Register value)
+{
+    *get_memory_mapping().access_memory<Register>(offset) = value;
 }
 
-void DE1SoCfgpa::WriteRegister(std::size_t offset, DE1SoCfgpa::Register value)
+posix_api::MemoryMapping& DE1SoCHardwareDevice::get_memory_mapping()
 {
-    *m_memory_mapping.access_memory<Register>(offset) = value;
+    // Memory mapping initialized on first use.
+    static auto memory_mapping = []() {
+        using namespace posix_api;
+
+        const auto fd = File("/dev/mem", FileFlag::ReadWrite | FileFlag::Sync);
+
+        auto mapping = MemoryMapping(
+            fd,
+            de1soc::bridge_span,
+            MemoryFlag::Write | MemoryFlag::Read,
+            de1soc::bridge_base
+        );
+
+        if (!mapping) {
+            throw MemoryMappingError(
+                "failed to open memory mapping to DE1-SoC board physical memory"
+            );
+        }
+        return mapping;
+    }();
+
+    return memory_mapping;
 }

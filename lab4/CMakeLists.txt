@@ -1,1 +1,1 @@
-add_executable(lab4 lab4.cpp de1socfpga.cpp)
+add_executable(lab4 lab4.cpp de1socfpga.cpp seven_segment_display.cpp)

@@ -2,12 +2,12 @@
 // Created by brian on 8/1/20.
 //
 
-#include "posix_api.h"
+#include "seven_segment_display.h"
 
 int main()
 {
-    using namespace posix_api;
-    auto fd = File("/dev/mem", FileFlag::ReadWrite | FileFlag::Sync);
+    SevenSegmentDisplay seven_segment_display;
 
-    auto mem_mapping = MemoryMapping(fd, 1, MemoryFlag::Read | MemoryFlag::Write, 1);
+    seven_segment_display.write_display_character(0, '1');
+//    seven_segment_display.write_display_character(2, '1');
 }
