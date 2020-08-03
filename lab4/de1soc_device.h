@@ -14,7 +14,7 @@
  * all class that need to interact with DE1-SoC hardware.
  *
  * In order to ensure that only one memory mapping is created, we implement
- * a sort-of singleton MemoryMapping object, which is accessible from the member
+ * a "pseudo singleton" MemoryMapping object, which is accessible from the member
  * function get_memory_mapping().
  */
 class DE1SoCHardwareDevice {

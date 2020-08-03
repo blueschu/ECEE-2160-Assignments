@@ -4,14 +4,20 @@
  * Author:  Brian Schubert
  * Date:    2020-08-01
  *
+ * References
+ * ==========
+ *
+ *
+ * [P0627r0] http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0627r0.pdf
+ *
  */
 
 #include <chrono>                   // for std::chrono::duration
 #include <thread>                   // for std::this_thread
 
 #include "de1soc_properties.h"
-#include "seven_segment_display.h"
 #include "led_array.h"
+#include "seven_segment_display.h"
 #include "switch_array.h"
 #include "wrapping_counter.h"
 
@@ -56,16 +62,11 @@ void run_bottom_demo(DE1SoC& board);
 
 } // end namespace
 
-
-
-
 int main()
 {
-
     auto board = make_de1soc();
 
     run_bottom_demo(board);
-
 }
 
 // Internal definitions
@@ -77,6 +78,7 @@ void run_bottom_demo(DE1SoC& board)
     WrappingCounter counter{(1u << de1soc::led_count) - 1};
 
     // The state of the DE1SoC's button's during the previous cycle.
+    // Use decltype to avoid repeating DE1-SoC specific constants in type parameter.
     decltype(board.push_buttons)::State previous_button{};
 
     while (true) {
@@ -96,6 +98,7 @@ void run_bottom_demo(DE1SoC& board)
             continue;
         }
 
+        // Check if multiple buttons are currently depressed.
         if (button_press.multiple()) {
             const auto switch_state = board.switch_array.read_all().bits;
 
@@ -107,6 +110,8 @@ void run_bottom_demo(DE1SoC& board)
                 break;
             }
         } else {
+            // Only one button is currently pressed. Take any action based on
+            // its value.
             switch (button_press.bits) {
                 case 0b0000: { // No action
                     break;
@@ -133,16 +138,15 @@ void run_bottom_demo(DE1SoC& board)
                     // Since the above is true, we can see that all possible
                     // button states are enumerated above.
 
-                    // Signal to compiler that this branch is impossible.
-                    // todo cite
+                    // Signal to compiler that this branch is impossible [P0627r0].
                     __builtin_unreachable();
 
                 }
-            }
+            } // switch
         }
 
         // Update the board's LEDs.
-        // Add explicit casts to suppress warnings about loss of precision.
+        // Use explicit casts to suppress warnings about loss of precision.
         board.led_array.write_all(static_cast<unsigned int>(counter));
         board.display.show_number(static_cast<int>(counter));
 
@@ -150,7 +154,7 @@ void run_bottom_demo(DE1SoC& board)
 
         std::this_thread::sleep_for(REFRESH_PERIOD);
 
-    }
+    } // while (true)
 
 }
 

@@ -2,6 +2,9 @@
 // Created by brian on 8/3/20.
 //
 
+
+// https://en.wikipedia.org/wiki/Endianness
+
 #ifndef ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
 #define ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
 

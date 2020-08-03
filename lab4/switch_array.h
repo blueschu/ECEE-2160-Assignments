@@ -8,7 +8,7 @@
 #include <cstddef>
 
 /**
- * An array of switches on the DE1-SoC board.
+ * An array of switches (or push buttons) on the DE1-SoC board.
  *
  * This class inherits from DE1SoCHardwareDevice to gain access to
  * memory-mapping I/O utilities per lab instructions.
@@ -45,6 +45,7 @@ class SwitchArray : private DE1SoCHardwareDevice {
 
         State(Register b) : bits{b}
         {
+            // Count the number of `1` bits.
             for (std::size_t i{0}; i < N; ++i) {
                 if (bits & (1u << i)) {
                     ++count;
