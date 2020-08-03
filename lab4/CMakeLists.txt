@@ -1,1 +1,1 @@
-add_executable(lab4 lab4.cpp de1soc_device.cpp seven_segment_display.tpp led_array.tpp)
+add_executable(lab4 lab4.cpp de1soc_device.cpp)

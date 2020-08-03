@@ -2,7 +2,7 @@
 // Created by brian on 8/3/20.
 //
 
-#include "led_array.h"
+#include <stdexcept>            // for std::out_of_range
 
 template<std::size_t N>
 void LedArray<N>::update_leds()

@@ -16,8 +16,9 @@
  * This class inherits from DE1SoCHardwareDevice to gain access to
  * memory-mapping I/O utilities per lab instructions.
  *
- * This class it capable to with an LED control register representing
- * any number of LEDs up to 32.
+ * This class is designed to be de-coupled with the details of the DE1-SoC
+ * board itself. It is capable of interfacing with an LED control register
+ * representing any number of LEDs up to 32.
  *
  * @tparam The number of leds, not exceeding 32.
  */
@@ -25,8 +26,8 @@ template<std::size_t N>
 class LedArray : private DE1SoCHardwareDevice {
 
     static_assert(
-        N < CHAR_BIT * sizeof(Register),
-        "LedArray can only operate on one LED control register."
+        N <= CHAR_BIT * sizeof(Register),
+        "LedArray can only operate on one LED control register (32 leds)."
     );
 
     /// Cache of the current state of the DE1-SoC LEDs.

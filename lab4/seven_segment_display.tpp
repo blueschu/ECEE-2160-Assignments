@@ -2,8 +2,6 @@
 // Created by brian on 8/3/20.
 //
 
-#include "seven_segment_display.h"
-
 #include <stdexcept>            // for std::out_of_range, std::domain_error
 #include <cctype>               // for std::isdigit, std::isxdigit
 

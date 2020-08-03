@@ -48,7 +48,7 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     /// Type representing a static array with a length equal to the number
     /// of seven-segment display control registers.
     template<typename V>
-    using RegisterArrayMapping = std::array<V, k_register_count>;
+    using RegisterMappingArray = std::array<V, k_register_count>;
 
     /**
      * View into a seven segment display register as either a full DE1-SoC
@@ -103,12 +103,12 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      * This array corresponds to the member variables `reg0_hexValue` and
      * `reg1_hexValue` from the lab instructions.
      */
-    RegisterArrayMapping<DisplayRegister> m_register_values{};
+    RegisterMappingArray<DisplayRegister> m_register_values{};
 
     /**
      * The offsets to the control registers for the seven segment dispalys.
      */
-    RegisterArrayMapping<std::size_t> m_register_offsets;
+    RegisterMappingArray<std::size_t> m_register_offsets;
 
     /**
      * Whether this display is the current logically owner of the seven-segment
@@ -124,14 +124,14 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      *
      * @param register_offsets Offsets to seven-segment display control registers.
      */
-    explicit SevenSegmentDisplay(RegisterArrayMapping<std::size_t> register_offsets)
+    explicit SevenSegmentDisplay(RegisterMappingArray<std::size_t> register_offsets)
         : m_register_offsets{std::move(register_offsets)} {}
 
     ~SevenSegmentDisplay()
     {
-        // Clear the seven-segment displays.
+        // Clear the seven-segment displays per lab instructions.
         if (m_owner) {
-//            clear_all();
+            clear_all();
         }
     }
 
@@ -211,9 +211,13 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
 
     /**
      * Returns a reference to the display at the given index.
+     *
+     * Marked as nodiscard per clang-tiddy recommendation.
+     *
      * @param index Display index.
      * @return Reference to display value.
      */
+    [[nodiscard]]
     DisplayValue& access_display_unchecked(std::size_t index)
     {
         const auto reg_index = index / sizeof(Register);

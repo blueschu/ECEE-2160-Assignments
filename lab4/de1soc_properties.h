@@ -14,6 +14,8 @@
 #ifndef ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
 #define ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
 
+#include <cstddef>
+
 /// Namespace for DE1-SoC board properties.
 namespace de1soc {
 
@@ -43,6 +45,9 @@ constexpr inline std::size_t led_count{10};
 
 /// The number of switches on the DE1-SOC board.
 constexpr inline std::size_t switch_count{10};
+
+/// The number of push buttons on the DE1-SOC board.
+constexpr inline std::size_t key_count{4};
 
 /// The number of seven segment displays on the DE1-SoC board.
 constexpr inline std::size_t seven_segment_display_count{6};
