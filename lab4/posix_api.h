@@ -1,5 +1,5 @@
 /**
- * ECEE 2160 Lab Assignment 4 POSIX API utilities.
+ * ECEE 2160 Lab Assignment 4 - POSIX API utilities.
  *
  * This is a header-only library that serves as a partial C++ wrapper around
  * the POSIX api required in this lab.
@@ -158,6 +158,10 @@ class MemoryMappingError : public std::runtime_error {
 /**
  * A mapping between this process' virtual address space and the contents
  * of some file.
+ *
+ * Note: this class retains a system file descriptor for the duration of its
+ * life. To minimize system resource use, the lifespan of MemoryMapping should
+ * be as short as possible.
  */
 class MemoryMapping {
 
@@ -190,7 +194,9 @@ class MemoryMapping {
      * This constructor always uses MAP_SHARED for the memory sharing flag.
      *
      * If this constructor fails to acquire a memory mapping, using operator
-     * bool() on this object will return `false`.
+     * bool() on this object will return `false`. If the macro
+     * POSIX_API_PRINT_DEBUG is defined, additional debug info will be printed
+     * to stderr on memory mapping failure.
      *
      * @param fd POSIX file to be mapped.
      * @param bridge_span Mapping span.

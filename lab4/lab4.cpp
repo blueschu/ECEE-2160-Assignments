@@ -15,11 +15,9 @@
 #include <chrono>                   // for std::chrono::duration
 #include <thread>                   // for std::this_thread
 
-#include "de1soc_properties.h"
-#include "led_array.h"
-#include "seven_segment_display.h"
-#include "switch_array.h"
-#include "wrapping_counter.h"
+#include "de1soc_properties.h"      // for de1soc_config
+#include "de1soc_register_io.h"          // for DE1SoCRegisterIO
+#include "wrapping_counter.h"       // for WrappingCounter
 
 
 // Using anonymous namespace to given symbols internal linkage.
@@ -42,21 +40,11 @@ constexpr int SWITCH_EXIT_SENTINEL = 0;
  * Convenience structure to hold all DE1-SoC hardware device interfaces.
  */
 struct DE1SoC {
-    SevenSegmentDisplay<de1soc::seven_segment_display_count> display;
-
-    LedArray<de1soc::led_count> led_array;
-
-    SwitchArray<de1soc::switch_count> switch_array;
-
-    SwitchArray<de1soc::key_count> push_buttons;
+    de1soc_config::Display display;
+    de1soc_config::LEDs leds;
+    de1soc_config::Switches switches;
+    de1soc_config::Keys keys;
 };
-
-/**
- * Initializes all DE1-SoC hardware interfaces.
- *
- * @return New DE1SoC.
- */
-DE1SoC make_de1soc();
 
 void run_bottom_demo(DE1SoC& board);
 
@@ -64,8 +52,23 @@ void run_bottom_demo(DE1SoC& board);
 
 int main()
 {
-    auto board = make_de1soc();
+    using namespace de1soc_config;
 
+    // Create a DE1SoCRegisterIO which will be shared by all hardware device
+    // interface classes.
+    auto register_io = std::make_shared<DE1SoCRegisterIO>(
+        DE1SoCRegisterIO::new_connection()
+    );
+
+    // Initialize all DE1-Soc hardware interfaces.
+    DE1SoC board{
+        {register_io, {hex3_hex0_base, hex5_hex4_base}},
+        {register_io, ledr_base},
+        {register_io, switch_base},
+        {register_io, key_base},
+    };
+
+    // Run the demo.
     run_bottom_demo(board);
 }
 
@@ -75,23 +78,21 @@ namespace {
 void run_bottom_demo(DE1SoC& board)
 {
     // Counter holding the state to be written to the board's LEDs.
-    WrappingCounter counter{(1u << de1soc::led_count) - 1};
+    WrappingCounter counter{(1u << de1soc_config::led_count) - 1};
 
     // The state of the DE1SoC's button's during the previous cycle.
-    // Use decltype to avoid repeating DE1-SoC specific constants in type parameter.
-    decltype(board.push_buttons)::State previous_button{};
+    de1soc_config::Keys::State previous_button{};
 
     while (true) {
         // Current state of the board's buttons.
-        const auto button_press = board.push_buttons.read_all();
+        const auto button_press = board.keys.read_all();
 
         // If true, the user recently pressed multiple buttons. We want to
         // wait until all buttons have been released before taking any new actions.
-        const bool wait_for_unpress = previous_button.multiple()
-            && button_press.count != 0;
+        const bool wait_for_unpress = previous_button.multiple() && button_press.count != 0;
 
         // If true, the button state has not changed, so no action should be taken.
-        const bool no_button_change = button_press.bits == previous_button.bits;
+        const bool no_button_change = button_press == previous_button;
 
         if (wait_for_unpress || no_button_change) {
             std::this_thread::sleep_for(REFRESH_PERIOD);
@@ -100,17 +101,18 @@ void run_bottom_demo(DE1SoC& board)
 
         // Check if multiple buttons are currently depressed.
         if (button_press.multiple()) {
-            const auto switch_state = board.switch_array.read_all().bits;
+            const auto switch_state = board.switches.read_all().bits;
 
             // Set the LEDs to match the state of the switches.
             counter.apply([=](auto) { return switch_state; });
 
             // Check if the current state of the switches matches the exit state.
             if (switch_state == SWITCH_EXIT_SENTINEL) {
+                // Stop the demo program.
                 break;
             }
         } else {
-            // Only one button is currently pressed. Take any action based on
+            // Only one button is currently pressed. Take an action based on
             // its value.
             switch (button_press.bits) {
                 case 0b0000: { // No action
@@ -134,7 +136,7 @@ void run_bottom_demo(DE1SoC& board)
                 }
                 default: {
                     // Confirm that there are only four push buttons.
-                    static_assert(decltype(board.push_buttons)::k_switch_count == 4);
+                    static_assert(de1soc_config::Keys::k_switch_count == 4);
                     // Since the above is true, we can see that all possible
                     // button states are enumerated above.
 
@@ -145,9 +147,9 @@ void run_bottom_demo(DE1SoC& board)
             } // switch
         }
 
-        // Update the board's LEDs.
+        // Update the board's LEDs and seven-segment display.
         // Use explicit casts to suppress warnings about loss of precision.
-        board.led_array.write_all(static_cast<unsigned int>(counter));
+        board.leds.write_all(static_cast<unsigned int>(counter));
         board.display.show_number(static_cast<int>(counter));
 
         previous_button = button_press;
@@ -156,18 +158,6 @@ void run_bottom_demo(DE1SoC& board)
 
     } // while (true)
 
-}
-
-DE1SoC make_de1soc()
-{
-    using namespace de1soc;
-
-    return {
-        SevenSegmentDisplay<de1soc::seven_segment_display_count>{{hex3_hex0_base, hex5_hex4_base}},
-        LedArray<led_count>{ledr_base},
-        SwitchArray<switch_count>{switch_base},
-        SwitchArray<key_count>{key_base},
-    };
 }
 
 }

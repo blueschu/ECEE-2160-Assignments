@@ -1,28 +1,32 @@
-//
-// Created by brian on 8/3/20.
-//
+/**
+ * ECEE 2160 Lab Assignment 4 - Generic seven-segment display I/O.
+ *
+ * Author:  Brian Schubert
+ * Date:    2020-08-03
+ *
+ */
 
 #include <stdexcept>            // for std::out_of_range, std::domain_error
 #include <cctype>               // for std::isdigit, std::isxdigit
 
-template<std::size_t N>
-void SevenSegmentDisplay<N>::update_display()
+template<std::size_t N, typename Reg>
+void SevenSegmentDisplay<N, Reg>::update_display()
 {
     for (std::size_t i{0}; i < k_register_count; ++i) {
-        write_register(m_register_offsets[i], m_register_values[i].reg);
+        m_register_io->write_register(m_register_offsets[i], m_register_values[i].reg);
     }
 }
 
-template<std::size_t N>
-void SevenSegmentDisplay<N>::clear_all()
+template<std::size_t N, typename Reg>
+void SevenSegmentDisplay<N, Reg>::clear_all()
 {
     // Set all displays to zero.
     m_register_values = {};
     update_display();
 }
 
-template<std::size_t N>
-void SevenSegmentDisplay<N>::clear_display(std::size_t index)
+template<std::size_t N, typename Reg>
+void SevenSegmentDisplay<N, Reg>::clear_display(std::size_t index)
 {
     if (index >= N) {
         throw std::out_of_range("index must not exceed seven-segment display range");
@@ -32,8 +36,8 @@ void SevenSegmentDisplay<N>::clear_display(std::size_t index)
     update_display();
 }
 
-template<std::size_t N>
-void SevenSegmentDisplay<N>::write_display_character(std::size_t index, char character)
+template<std::size_t N, typename Reg>
+void SevenSegmentDisplay<N, Reg>::write_display_character(std::size_t index, char character)
 {
     if (index >= N) {
         throw std::out_of_range("index must not exceed seven-segment display range");
@@ -46,18 +50,20 @@ void SevenSegmentDisplay<N>::write_display_character(std::size_t index, char cha
     // Translate character to its index in the character value map.
     // Note: we assume ASCII encoding for characters. In general, it is not
     // guaranteed that the characters 'A' through 'F' are consecutive.
-    std::size_t value_index = std::isdigit(character)
-        ? (character - '0')
-        : (character >= 'a') ? (character - 'a') : (character - 'A');
+    auto value_index = static_cast<std::size_t>(
+        std::isdigit(character)
+            ? (character - '0')
+            : (character >= 'a') ? (character - 'a') : (character - 'A')
+    );
 
     // Set the target display to the given value.
-    access_display_unchecked(index) = k_character_values[value_index];
+    access_display_unchecked(index) = display_config::character_values[value_index];
 
     update_display();
 }
 
-template<std::size_t N>
-void SevenSegmentDisplay<N>::show_number(int number)
+template<std::size_t N, typename Reg>
+void SevenSegmentDisplay<N, Reg>::show_number(int number)
 {
     const auto[min_value, max_value] =  display_range();
     constexpr int display_base = 16;
@@ -84,14 +90,14 @@ void SevenSegmentDisplay<N>::show_number(int number)
         // Index of the given hexadecimal character in the display value mapping.
         auto value_index = static_cast<std::size_t>(mod);
 
-        access_display_unchecked(current_display) = k_character_values[value_index];
+        access_display_unchecked(current_display) = display_config::character_values[value_index];
         ++current_display;
     }
 
     // If the original number was negative, write a negative sign to the
     // right-most unused display.
     if (number < 0) {
-        access_display_unchecked(current_display) = k_negative_sign;
+        access_display_unchecked(current_display) = display_config::negative_sign;
     }
 
     update_display();

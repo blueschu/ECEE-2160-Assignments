@@ -1,46 +1,82 @@
-//
-// Created by brian on 8/3/20.
-//
+/**
+ * ECEE 2160 Lab Assignment 4 - Generic seven-segment display I/O.
+ *
+ * Author:  Brian Schubert
+ * Date:    2020-08-03
+ *
+ * References
+ * ==========
+ *
+ *  - https://en.wikipedia.org/wiki/Endianness
+ *
+ */
 
-
-// https://en.wikipedia.org/wiki/Endianness
 
 #ifndef ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
 #define ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
 
-#include <array>
+#include <array>                // for std::array
 
-#include "de1soc_device.h"
+#include "register_io.h"        // for RegisterIO
+
+/// Namespace for universal seven-segment display properties.
+namespace display_config {
+/// Integral type used to represent the encoded value of a single display.
+using DisplayValue = std::uint8_t;
 
 /**
- * The seven segment display on the DE1-SoC board.
- *
- * This class inherits from DE1SoCHardwareDevice to gain access to
- * memory-mapping I/O utilities per lab instructions.
+ * Mapping between [0,15] and the corresponding hexadecimal characters
+ * encoded for the seven-segment displays.
+ */
+constexpr inline std::array<DisplayValue, 16> character_values{
+    0b0011'1111, // 0
+    0b0000'0110, // 1
+    0b0101'1011, // 2
+    0b0100'1111, // 3
+    0b0110'0110, // 4
+    0b0110'1101, // 5
+    0b0111'1101, // 6
+    0b0000'0111, // 7
+    0b0111'1111, // 8
+    0b0110'1111, // 9
+    0b0111'0111, // A
+    0b0111'1100, // B
+    0b0011'1001, // C
+    0b0101'1110, // D
+    0b0111'1001, // E
+    0b0111'0001, // F
+};
+
+/**
+ * Seven-segment display encoded negative sign.
+ */
+constexpr inline DisplayValue negative_sign{0b0100'0000};
+} // namespace display_config
+
+/**
+ * The seven segment display on the a generic board.
  *
  * This class is designed to be de-coupled with the details of the DE1-SoC
- * board itself. It should be usable on any system with 32-bit little-endian
+ * board itself. It should be usable on any system with little-endian
  * control registers without any changes.
  *
- * Note: if this class used DE1SoCHardwareDevice via composition instead of
- * inheritance, we could test this class without an active hardware connection
- * by creating a mock hardware handle. Don't design hierarchies like this in
- * real-world code.
+ * Unlike other hardware interface implemented for this lab, this class
+ * can should be able to freely operate on boards with word sizes of any
+ * multiple of CHAR_BIT.
+ *
  */
-template<std::size_t N>
-class SevenSegmentDisplay : private DE1SoCHardwareDevice {
+template<std::size_t N, typename Reg>
+class SevenSegmentDisplay {
     /**
-     * The union DisplayRegister requires the DE1-SoC register size to be
-     * precisely 32 bits. This check is added for the purposes of documentation
+     * Alias for the underlying type of seven-segment display control registers.
      */
-    static_assert(sizeof(DE1SoCHardwareDevice::Register) == 4);
-
-    /// Integral type used to represent the encoded value of a single display.
-    using DisplayValue = std::uint8_t;
+    using Register = typename RegisterIO<Reg>::Register;
 
     /**
      * The number of control registers storing the state of the seven-segment
      * displays.
+     *
+     * This constant equals ceil(N / 4) where N is the number of displays.
      */
     constexpr static inline std::size_t k_register_count{
         N % sizeof(Register) == 0
@@ -57,48 +93,20 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      * View into a seven segment display register as either a full DE1-SoC
      * register or as individual display displays.
      *
-     * Words on DE1-SoC are little-endian, so displays[0] represents the
-     * first display segment in the register, and displays[3] represent the
+     * Words on are expected to be little-endian, so displays[0] represents the
+     * first display segment in the register, and displays[N] represent the
      * last.
      *
-     * Note: this construct is not portable. We use explicit knowledge about
-     * the layout of the DE1-SoC's register to make this union valid. This
-     * code may not work as intended if ported to a different device.
+     * Note: This union should be portable, but we do not have sufficient C++
+     * expertise to guarantee this. If this code is ported to a different,
+     * some special attention should be given to this type.
      */
     union DisplayRegister {
-        DisplayValue displays[4];
-        DE1SoCHardwareDevice::Register reg;
+        display_config::DisplayValue displays[sizeof(Register)];
+        Register reg;
     };
-    // Sanity check for display register size.
-    static_assert(sizeof(DisplayRegister) == 4);
-
-    /**
-     * Mapping between [0,15] and the corresponding hexadecimal characters
-     * encoded for the seven-segment displays.
-     */
-    constexpr static inline std::array<DisplayValue, 16> k_character_values{
-        0b0011'1111, // 0
-        0b0000'0110, // 1
-        0b0101'1011, // 2
-        0b0100'1111, // 3
-        0b0110'0110, // 4
-        0b0110'1101, // 5
-        0b0111'1101, // 6
-        0b0000'0111, // 7
-        0b0111'1111, // 8
-        0b0110'1111, // 9
-        0b0111'0111, // A
-        0b0111'1100, // B
-        0b0011'1001, // C
-        0b0101'1110, // D
-        0b0111'1001, // E
-        0b0111'0001, // F
-    };
-
-    /**
-     * Seven-segment display encoded negative sign.
-     */
-    constexpr static inline DisplayValue k_negative_sign{0b0100'0000};
+    /// Ensure the DisplayRegisters have the same layout as the control registers.
+    static_assert(sizeof(DisplayRegister) == sizeof(Register));
 
     /**
      * Cache of the current values of the seven segment display registers.
@@ -108,6 +116,9 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      */
     RegisterMappingArray<DisplayRegister> m_register_values{};
 
+    /// Shared accessor to the board's physical memory.
+    std::shared_ptr<RegisterIO<Reg>> m_register_io;
+
     /**
      * The offsets to the control registers for the seven segment dispalys.
      */
@@ -116,19 +127,28 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
     /**
      * Whether this display is the current logically owner of the seven-segment
      * display.
+     *
+     * We need to track this property to prevent "moved-from"
+     * SevenSegmentDisplays instances from clearing the displays.
      */
     bool m_owner{true};
 
   public:
     /**
-     * Constructs a SevenSegmentDisplay with the given sequence of display
-     * control registers. Each register represents the state of 4 (or fewer)
-     * seven-segment displays.
+     * Constructs a SevenSegmentDisplay with the specified register I/O accessor
+     * and with the given sequence of display control registers.
      *
-     * @param register_offsets Offsets to seven-segment display control registers.
+     *
+     * @param register_io       Accessor to memory-mapped physical addresses.
+     * @param register_offsets  Offsets from the physical mapping base to
+     *                          the seven-segment display control registers.
      */
-    explicit SevenSegmentDisplay(RegisterMappingArray<std::size_t> register_offsets)
-        : m_register_offsets{std::move(register_offsets)} {}
+    SevenSegmentDisplay(
+        std::shared_ptr<RegisterIO<Reg>> register_io,
+        RegisterMappingArray<std::size_t> register_offsets
+    )
+        : m_register_io{std::move(register_io)},
+          m_register_offsets{std::move(register_offsets)} {}
 
     ~SevenSegmentDisplay()
     {
@@ -221,7 +241,7 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
      * @return Reference to display value.
      */
     [[nodiscard]]
-    DisplayValue& access_display_unchecked(std::size_t index)
+    display_config::DisplayValue& access_display_unchecked(std::size_t index)
     {
         const auto reg_index = index / sizeof(Register);
         const auto display_index = index % sizeof(Register);
@@ -231,9 +251,9 @@ class SevenSegmentDisplay : private DE1SoCHardwareDevice {
 
 };
 
-// Sanity check for min/max display values.
-static_assert(SevenSegmentDisplay<6>::display_range().first == -0x0F'FF'FF);
-static_assert(SevenSegmentDisplay<6>::display_range().second == 0xFF'FF'FF);
+// Sanity check for min/max display values. Register type is arbitrary.
+static_assert(SevenSegmentDisplay<6, int>::display_range().first == -0x0F'FF'FF);
+static_assert(SevenSegmentDisplay<6, int>::display_range().second == 0xFF'FF'FF);
 
 #include "seven_segment_display.tpp"
 

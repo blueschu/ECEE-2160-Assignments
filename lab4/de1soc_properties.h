@@ -1,14 +1,19 @@
 /**
  * ECEE 2160 Lab Assignment 4 DE1-SoC board properties.
  *
- * This header defines several constants for the DE1-SoC board.
+ * This header defines several constants and type aliases for the DE1-SoC board.
+ *
+ * In theory, this header could be swapped with a "properties header" for a
+ * different board to adapt this entire codebase to operating on a different
+ * system. All DE1-SoC-specific implementation details are contained in this
+ * file.
  *
  * Author:  Brian Schubert
  * Date:    2020-08-03
  *
  * In contrast with the style used in previous labs, we declare all global
  * constants in lower_snake_case instead of UPPER_SNAKE_CASE to avoid name
- * collisons with macros (which there are quite a few of from the posix headers).
+ * collisions with macros.
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
@@ -16,8 +21,20 @@
 
 #include <cstddef>
 
+#include "led_array.h"
+#include "seven_segment_display.h"
+#include "switch_array.h"
+
 /// Namespace for DE1-SoC board properties.
-namespace de1soc {
+namespace de1soc_config {
+
+/**
+ * Integral type for DE1-SoC device registers.
+ *
+ * Per documentation from the instructor, we can expect all registers
+ * to occupy precisely 32 bits on the DE1-SoC.
+ */
+using Register = std::uint32_t;
 
 /// Physical base address of FPGA Devices.
 constexpr inline std::size_t bridge_base{0xFF'20'00'00};
@@ -51,6 +68,19 @@ constexpr inline std::size_t key_count{4};
 
 /// The number of seven segment displays on the DE1-SoC board.
 constexpr inline std::size_t seven_segment_display_count{6};
-} // namespace de1soc
+
+/// SevenSegmentDisplay alias specialized for the DE1-SoC.
+using Display = SevenSegmentDisplay<seven_segment_display_count, Register>;
+
+/// LedArray alias specialized for the DE1-SoC.
+using LEDs = LedArray<led_count, Register>;
+
+/// SwitchArray alias specialized for the DE1-SoC.
+using Switches = SwitchArray<switch_count, Register>;
+
+/// SwitchArray alias specialized for the DE1-SoC.
+using Keys = SwitchArray<key_count, Register>;
+
+} // namespace de1soc_config
 
 #endif //ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H

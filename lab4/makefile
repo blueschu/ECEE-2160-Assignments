@@ -10,7 +10,7 @@ CPPFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion -D_GLIBCXX_US
 lab4-arm : de1soc_device.o led_array.h seven_segment_display.h switch_array.h wrapping_counter.h
 		${CXX} ${CPPFLAGS} lab4.cpp de1soc_device.o -o lab4-arm
 
-de1soc_device.o : de1soc_device.cpp de1soc_device.h
+de1soc_device.o : de1soc_register_io.cpp de1soc_register_io.h
 		${CXX} ${CPPFLAGS} -c de1soc_device.cpp -o de1soc_device.o
 
 

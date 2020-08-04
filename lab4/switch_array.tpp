@@ -1,11 +1,14 @@
-//
-// Created by brian on 8/3/20.
-//
+/**
+ * ECEE 2160 Lab Assignment 4 - Generic memory-mapped LED I/O.
+ *
+ * Author:  Brian Schubert
+ * Date:    2020-08-03
+ */
 
 #include <stdexcept>            // for std::out_of_range
 
-template<std::size_t N>
-bool SwitchArray<N>::read(std::size_t index) const
+template<std::size_t N, typename Reg>
+bool SwitchArray<N, Reg>::read(std::size_t index) const
 {
     if (index >= N) {
         throw std::out_of_range("index must not exceed switch array range");
@@ -20,8 +23,8 @@ bool SwitchArray<N>::read(std::size_t index) const
     return switch_state & 1u;
 }
 
-template<std::size_t N>
-typename SwitchArray<N>::State SwitchArray<N>::read_all() const
+template<std::size_t N, typename Reg>
+typename SwitchArray<N, Reg>::State SwitchArray<N, Reg>::read_all() const
 {
-    return read_register(m_base_offset);
+    return State{m_register_io->read_register(m_base_offset)};
 }
