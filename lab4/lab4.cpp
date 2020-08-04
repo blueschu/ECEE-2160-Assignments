@@ -16,8 +16,13 @@
 #include <thread>                   // for std::this_thread
 
 #include "de1soc_properties.h"      // for de1soc_config
-#include "de1soc_register_io.h"          // for DE1SoCRegisterIO
+#include "de1soc_register_io.h"     // for DE1SoCRegisterIO
 #include "wrapping_counter.h"       // for WrappingCounter
+
+
+#ifdef LAB4_MOCK
+#include "mock_register_io.h"
+#endif
 
 
 // Using anonymous namespace to given symbols internal linkage.
@@ -54,11 +59,16 @@ int main()
 {
     using namespace de1soc_config;
 
+#ifdef LAB4_MOCK
+    // Create a MockRegisterIO for testing without hardware.
+    auto register_io = std::make_shared<MockRegisterIO>();
+#else
     // Create a DE1SoCRegisterIO which will be shared by all hardware device
     // interface classes.
     auto register_io = std::make_shared<DE1SoCRegisterIO>(
         DE1SoCRegisterIO::new_connection()
     );
+#endif
 
     // Initialize all DE1-Soc hardware interfaces.
     DE1SoC board{

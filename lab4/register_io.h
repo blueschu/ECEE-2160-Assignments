@@ -40,12 +40,12 @@ class RegisterIO {
     /**
      * Write a 4-byte value from the specified mapped I/O location.
      *
-     * This function was based on an example provided by the instructor.
-     *
      * @param reg_offset Offset to device to the register relative to the mapping base..
      * @return Register value to be written.
     */
     virtual void write_register(std::size_t offset, Register value) = 0;
+
+    virtual ~RegisterIO() = default;
 };
 
 #endif //ECEE_2160_LAB_REPORTS_REGISTER_IO_H
