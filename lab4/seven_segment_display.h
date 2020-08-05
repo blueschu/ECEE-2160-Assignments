@@ -7,8 +7,8 @@
  * References
  * ==========
  *
- *  - https://en.wikipedia.org/wiki/Endianness
- *
+ * [wiki-endianness]    https://en.wikipedia.org/wiki/Endianness
+ * [isocpp-guidelines]  https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
  */
 
 
@@ -50,7 +50,7 @@ constexpr inline std::array<DisplayValue, 16> character_values{
 /**
  * Seven-segment display encoded negative sign.
  */
-constexpr inline DisplayValue negative_sign{0b0100'0000};
+constexpr inline DisplayValue negative_sign{0b01000000};
 } // namespace display_config
 
 /**
@@ -79,9 +79,7 @@ class SevenSegmentDisplay {
      * This constant equals ceil(N / 4) where N is the number of displays.
      */
     constexpr static inline std::size_t k_register_count{
-        N % sizeof(Register) == 0
-            ? N / sizeof(Register)
-            : (N / sizeof(Register)) + 1
+        N / sizeof(Register) + (N % sizeof(Register) == 0 ? 0 : 1)
     };
 
     /// Type representing a static array with a length equal to the number
@@ -93,8 +91,8 @@ class SevenSegmentDisplay {
      * View into a seven segment display register as either a full DE1-SoC
      * register or as individual display displays.
      *
-     * Words on are expected to be little-endian, so displays[0] represents the
-     * first display segment in the register, and displays[N] represent the
+     * Words are expected to be little-endian, so displays[0] represents the
+     * first display segment in the register, and displays[n] represents the
      * last.
      *
      * Note: This union should be portable, but we do not have sufficient C++
@@ -129,7 +127,7 @@ class SevenSegmentDisplay {
      * display.
      *
      * We need to track this property to prevent "moved-from"
-     * SevenSegmentDisplays instances from clearing the displays.
+     * SevenSegmentDisplay instances from clearing the displays.
      */
     bool m_owner{true};
 
@@ -150,7 +148,8 @@ class SevenSegmentDisplay {
         : m_register_io{std::move(register_io)},
           m_register_offsets{std::move(register_offsets)} {}
 
-    ~SevenSegmentDisplay()
+    // Destructor. Marked noexcept per C.37 [isocpp-guidelines].
+    ~SevenSegmentDisplay() noexcept
     {
         // Clear the seven-segment displays per lab instructions.
         if (m_owner) {
@@ -158,14 +157,18 @@ class SevenSegmentDisplay {
         }
     }
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     SevenSegmentDisplay(const SevenSegmentDisplay&) = delete;
 
+    // Move constructor, C.21 [isocpp-guidelines].
     SevenSegmentDisplay(SevenSegmentDisplay&& other) noexcept
         : m_register_values{std::exchange(other.m_register_values, {})},
           m_owner{std::exchange(other.m_owner, false)} {}
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     SevenSegmentDisplay& operator=(const SevenSegmentDisplay&) = delete;
 
+    // Move assignment, C.21 [isocpp-guidelines].
     SevenSegmentDisplay& operator=(SevenSegmentDisplay&& other) noexcept
     {
         m_register_values = std::exchange(other.m_register_values, {});
@@ -182,13 +185,20 @@ class SevenSegmentDisplay {
     /**
      * Turns off the specified display.
      *
+     * This function is defined for the lab, but is not used in the final
+     * demo program.
+     *
      * @param index Display index
      * @throws out_of_range if no display exists at the specified index.
      */
+    [[maybe_unused]]
     void clear_display(std::size_t index);
 
     /**
      * Write the given character to the specified seven-segment display.
+     *
+     * This function is defined for the lab, but is not used in the final
+     * demo program.
      *
      * @param index Display index.
      * @param value New display value.
@@ -196,6 +206,7 @@ class SevenSegmentDisplay {
      * @throws domain_error if the specified character cannot be displayed on
      *          a seven-segment display.
      */
+    [[maybe_unused]]
     void write_display_character(std::size_t index, char character);
 
     /**
@@ -203,10 +214,10 @@ class SevenSegmentDisplay {
      *
      * @param number The value to be shown by the displays.
      */
-    void show_number(int number);
+    void print_hex(int number);
 
     /**
-     * Returns a pair containg the minimum and maximum value that can be
+     * Returns a pair containing the minimum and maximum value that can be
      * displayed on the seven-segment display.
      *
      * @return [min, max] interval for seven-segment display.

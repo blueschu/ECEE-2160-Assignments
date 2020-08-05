@@ -16,14 +16,15 @@
  * collisions with macros.
  */
 
-#ifndef ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
-#define ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
+#ifndef ECEE_2160_LAB_REPORTS_DE1SOC_CONFIG_H
+#define ECEE_2160_LAB_REPORTS_DE1SOC_CONFIG_H
 
-#include <cstddef>
+#include <cstddef>                      // for std::size_t
+#include <cstdint>                      // for std::uintptr_t
 
-#include "led_array.h"
-#include "seven_segment_display.h"
-#include "switch_array.h"
+#include "led_array.h"                  // for LedArray
+#include "seven_segment_display.h"      // for SevenSegmentDisplay
+#include "switch_array.h"               // for SwitchArray
 
 /// Namespace for DE1-SoC board properties.
 namespace de1soc_config {
@@ -37,7 +38,7 @@ namespace de1soc_config {
 using Register = std::uint32_t;
 
 /// Physical base address of FPGA Devices.
-constexpr inline std::size_t bridge_base{0xFF'20'00'00};
+constexpr inline std::uintptr_t bridge_base{0xFF'20'00'00};
 
 /// Length of memory-mapped IO window
 constexpr inline std::size_t bridge_span{0x00'00'50'00};
@@ -83,4 +84,4 @@ using Keys = SwitchArray<key_count, Register>;
 
 } // namespace de1soc_config
 
-#endif //ECEE_2160_LAB_REPORTS_DE1SOC_PROPERTIES_H
+#endif //ECEE_2160_LAB_REPORTS_DE1SOC_CONFIG_H

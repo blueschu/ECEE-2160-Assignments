@@ -8,6 +8,7 @@
  * ==========
  *
  *  - https://en.cppreference.com/w/cpp/container/map
+ *  - https://stackoverflow.com/questions/2273330/
  */
 
 #ifndef ECEE_2160_LAB_REPORTS_MOCK_REGISTER_IO_H
@@ -27,16 +28,26 @@ class MockRegisterIO : public RegisterIO<std::uint32_t> {
      * Mapping between register offsets and their values.
      *
      * We use std::map instead of std::unordered_map since a sequential
-     * view of mapped address may be desirable in the future.
+     * view of mapped addresses may be desirable in the future.
      *
      * This variable is declared mutable since map::operator[] inserts a
      * zero value if the lookup fails.
      */
     mutable std::map<size_t, Register> m_mock_memory{};
 
+    /// Helper struct to reset an output stream's format flags on destruction.
+    struct FlagSaver {
+        std::ostream& m_out;
+        const std::ios::fmtflags m_flags;
+
+        explicit FlagSaver(std::ostream& out) : m_out{out}, m_flags{out.flags()} {}
+
+        ~FlagSaver() { m_out.flags(m_flags); }
+    };
+
   public:
 
-    /// Creates a MockRegisterIO with all registers being empty.
+    /// Creates a MockRegisterIO with empty registers.
     MockRegisterIO() = default;
 
     /// Creates a MockRegisterIO with the given register memory.
@@ -54,11 +65,12 @@ class MockRegisterIO : public RegisterIO<std::uint32_t> {
     [[nodiscard]]
     Register read_register(std::size_t offset) const override
     {
+        FlagSaver _{std::cout};
+        std::cout << std::hex;
         // Inserts register of 0 if a register does not already exist.
         auto value = m_mock_memory[offset];
-        std::cout << "Read register " << std::hex << offset
-                  << "(0x" << std::hex << value << ")\n";
-        return m_mock_memory[offset];
+        std::cout << "Read register " << offset << "(0x" << value << ")\n";
+        return value;
     }
 
     /**
@@ -69,8 +81,9 @@ class MockRegisterIO : public RegisterIO<std::uint32_t> {
     */
     void write_register(std::size_t offset, Register value) override
     {
-        std::cout << "Write register " << std::hex << offset
-                  << " (0x" << std::hex << value << ")\n";
+        FlagSaver _{std::cout};
+        std::cout << std::hex;
+        std::cout << "Write register " << offset << " (0x" << value << ")\n";
         m_mock_memory[offset] = value;
     }
 

@@ -6,8 +6,9 @@
  *
  */
 
-#include <stdexcept>            // for std::out_of_range, std::domain_error
+#include <cstdlib>              // for std::abs
 #include <cctype>               // for std::isdigit, std::isxdigit
+#include <stdexcept>            // for std::out_of_range, std::domain_error
 
 template<std::size_t N, typename Reg>
 void SevenSegmentDisplay<N, Reg>::update_display()
@@ -26,6 +27,7 @@ void SevenSegmentDisplay<N, Reg>::clear_all()
 }
 
 template<std::size_t N, typename Reg>
+[[maybe_unused]]
 void SevenSegmentDisplay<N, Reg>::clear_display(std::size_t index)
 {
     if (index >= N) {
@@ -37,6 +39,7 @@ void SevenSegmentDisplay<N, Reg>::clear_display(std::size_t index)
 }
 
 template<std::size_t N, typename Reg>
+[[maybe_unused]]
 void SevenSegmentDisplay<N, Reg>::write_display_character(std::size_t index, char character)
 {
     if (index >= N) {
@@ -63,10 +66,10 @@ void SevenSegmentDisplay<N, Reg>::write_display_character(std::size_t index, cha
 }
 
 template<std::size_t N, typename Reg>
-void SevenSegmentDisplay<N, Reg>::show_number(int number)
+void SevenSegmentDisplay<N, Reg>::print_hex(int number)
 {
-    const auto[min_value, max_value] =  display_range();
-    constexpr int display_base = 16;
+    const auto[min_value, max_value] = display_range();
+    constexpr static int display_base = 16;
 
     // Check that the passed value can be shown on the display.
     if (number > max_value) {
@@ -84,13 +87,12 @@ void SevenSegmentDisplay<N, Reg>::show_number(int number)
 
     // Write an unsigned representation of the value to the displays.
     while (pending != 0) {
-        auto mod = pending % display_base;
+        const auto next_digit = pending % display_base;
         pending /= display_base;
 
-        // Index of the given hexadecimal character in the display value mapping.
-        auto value_index = static_cast<std::size_t>(mod);
+        access_display_unchecked(current_display)
+            = display_config::character_values[next_digit];
 
-        access_display_unchecked(current_display) = display_config::character_values[value_index];
         ++current_display;
     }
 

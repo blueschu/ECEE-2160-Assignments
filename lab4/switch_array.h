@@ -61,7 +61,7 @@ class SwitchArray {
         explicit State(Register b) : bits{b}
         {
             // Count the number of `1` bits.
-            for (std::size_t i{0}; i < N; ++i) {
+            for (std::size_t i{0}; i < k_switch_count; ++i) {
                 if (bits & (1u << i)) {
                     ++count;
                 }
@@ -74,7 +74,7 @@ class SwitchArray {
         friend bool operator==(const State& lhs, const State& rhs) {
             return lhs.bits == rhs.bits;
         }
-    };
+    }; // struct State
 
     /**
      * Constructs an SwitchArray using the specified register I/O accessor and
@@ -85,7 +85,7 @@ class SwitchArray {
      *                    control register.
      */
     SwitchArray(std::shared_ptr<RegisterIO<Reg>> register_io, std::size_t base_offset)
-        : m_register_io{register_io}, m_base_offset{base_offset} {};
+        : m_register_io{std::move(register_io)}, m_base_offset{base_offset} {};
 
     /**
      * Reads the the state of the switch at the given index..

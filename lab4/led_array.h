@@ -21,10 +21,13 @@
  * board itself. It is capable of interfacing with an LED control register
  * representing any number of LEDs up to to word size of the target board.
  *
- * @tparam The number of leds, not exceeding target board word size..
+ * @tparam The number of leds, not exceeding target board word size.
  */
 template<std::size_t N, typename Reg>
 class LedArray {
+    /**
+     * Alias for the underlying type of the LED control register.
+     */
     using Register = typename RegisterIO<Reg>::Register;
 
     static_assert(
@@ -51,7 +54,7 @@ class LedArray {
      *                    control register.
      */
     LedArray(std::shared_ptr<RegisterIO<Reg>> register_io, std::size_t base_offset)
-        : m_register_io{register_io}, m_base_offset{base_offset} {};
+        : m_register_io{std::move(register_io)}, m_base_offset{base_offset} {};
 
     /**
      * Sets the LED at the given index to the specified state.

@@ -8,14 +8,15 @@
 #ifndef ECEE_2160_LAB_REPORTS_REGISTER_IO_H
 #define ECEE_2160_LAB_REPORTS_REGISTER_IO_H
 
+#include <type_traits>          // for std::is_abstract_v
+
 /**
  * An abstract base class for memory-mapped I/O classes.
  *
- * This class represents a generic interface to reading and writing to control
+ * This class represents a generic interface to reading and writing control
  * registers on generic boards.
  *
- * @tparam Reg The integral type used to represent a register on the
- *             target board.
+ * @tparam Reg  The integral type used to represent a register on the target board.
  */
 template<typename Reg>
 class RegisterIO {
@@ -25,27 +26,32 @@ class RegisterIO {
      */
     using Register = Reg;
 
-
     /**
-     * Read a 4-byte value from the specified mapped I/O location.
+     * Read a register value from the specified mapped I/O location.
      *
      * Added nodiscard attribute per clang-tidy recommendation.
      *
-     * @param reg_offset Offset to device to the register relative to the mapping base..
+     * @param reg_offset Offset to the target register relative to the mapping base.
      * @return Register value read.
     */
     [[nodiscard]]
     virtual Register read_register(std::size_t offset) const = 0;
 
     /**
-     * Write a 4-byte value from the specified mapped I/O location.
+     * Write a register value from the specified mapped I/O location.
      *
-     * @param reg_offset Offset to device to the register relative to the mapping base..
+     * @param reg_offset Offset to the target register relative to the mapping base.
      * @return Register value to be written.
     */
     virtual void write_register(std::size_t offset, Register value) = 0;
 
-    virtual ~RegisterIO() = default;
+    // Destructor. Marked noexcept per C.37.
+    virtual ~RegisterIO() noexcept = default;
 };
+
+static_assert(
+    std::is_abstract_v<RegisterIO<nullptr_t>>,
+    "RegisterIO is expected to be abstract"
+);
 
 #endif //ECEE_2160_LAB_REPORTS_REGISTER_IO_H

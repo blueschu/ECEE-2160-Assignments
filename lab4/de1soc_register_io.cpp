@@ -21,8 +21,12 @@ DE1SoCRegisterIO DE1SoCRegisterIO::new_connection()
 {
     using namespace posix_api;
 
+    // POSIX file descriptor to /dev/mem with read/write access.
     const auto fd = File("/dev/mem", FileFlag::ReadWrite | FileFlag::Sync);
 
+    // Mapping between this process' virtual hardware space and the devices
+    // physical memory. This call duplicates the file descriptor fd, so it can
+    // be safely destructed.
     auto mapping = MemoryMapping(
         fd,
         de1soc_config::bridge_span,

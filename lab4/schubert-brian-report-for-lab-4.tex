@@ -1,0 +1,204 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{4}
+\def\LABtitle{Controlling the 7-Segment Displays with \\ Object-Oriented Programming}
+\def\LABdatedue{August 5th, 2020}
+\def\LABdatesubmitted{August 5th, 2020}
+\def\LABabstract{\small This lab served as an introduction to controlling the seven-segment displays on the DE1-SoC board using memory-mapped I/O. The POSIX API was used to establish a physical-to-virtual memory mapping, which was in turn used to manipulate the state of the control registers for the seven-segment displays. The functionality of the displays was then demonstrated using a short, interactive C++ program.}
+
+\input{../ecee-2160-header.tex}
+
+\begin{document}
+\makelabtitle
+
+\section*{Introduction}
+This lab was an exercise in developing C++ programs that can interact with hardware devices.
+An object-oriented interface was developed for a subset of the POSIX API \cite{wiki:posix}, which facilitated the creation of mappings between the virtual address space of a C++ program and the physical addresses on the DE1-SoC board. This interface was then used to implement a C++ program that orchestrated interactions between the seven-segment displays, LEDs, switches, and push buttons on the DE1-SoC board.
+
+
+\section*{Lab Discussion}
+
+\subsection*{Materials}
+
+The following materials were used to complete this lab.
+\begin{enumerate}
+    \item Host computer (Linux Mint 19.3, x86\_64)
+    \item DE1-SoC board (de1soclinux, armv7l)
+\end{enumerate}
+
+\subsection*{Software}
+The following software was installed on the host machine.
+\begin{enumerate}
+    \item \texttt{arm-linux-gnueabihf-g++} --- GNU C++ compiler for the armhf architecture (v7.5.0)
+    \item \texttt{ssh} --- OpenSSH secure shell client
+    \item \texttt{scp} --- Secure file copy client
+\end{enumerate}
+
+Details regarding the configuration of the C++ compiler for cross-compiling to the DE1-SoC board are discussed in \cite{report-0}.
+
+\subsection*{Prelab Assignment}
+
+The prelab assignment consisted of preparing the following table (Table~\ref{tab:lab4-prelab}), which lists the binary encodings of hexadecimal digits for the DE1-SoC's seven-segment displays.
+
+\begin{table}[h]\centering
+    \caption{Digit encodings for seven-segment displays.}\label{tab:lab4-prelab}
+    \begin{tabular}{*{10}{>{\ttfamily}c}}
+        \hline
+        \multirow{2}{2cm}{\normalfont\bfseries\centering Character} & 
+        \multicolumn{7}{m{5cm}}{\normalfont\bfseries\centering Segment States} & 
+        \multirow{2}{1.5cm}{\normalfont\bfseries\centering Decimal} & 
+        \multirow{2}{2cm}{\normalfont\bfseries\centering Hexadecimal}\\
+        & 6 & 5 & 4 & 3 & 2 & 1 & 0 & & \\
+        \hline
+        \texttt{0} & 0 & 1 & 1 &1 & 1 & 1 & 1 &  ~63 & 0x3F \\
+        \texttt{1} & 0 & 0 & 0 & 0 & 1 & 1 & 0 & ~~6 & 0x06\\
+        \texttt{2} & 1 & 0 & 1 & 1 & 0 & 1 & 1 & ~91 & 0x5b\\
+        \texttt{3} & 1 & 0 & 0 & 1 & 1 & 1 & 1 & ~79 & 0x4F\\
+        \texttt{4} & 1 & 1 & 0 & 0 & 1 & 1 & 0 & 102 & 0x66\\
+        \texttt{5} & 1 & 1 & 0 & 1 & 1 & 0 & 1 & 109 & 0x6D\\
+        \texttt{6} & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 125 & 0x7D\\ 
+        \texttt{7} & 0 & 0 & 0 & 0 & 1 & 1 & 1 & ~~7 & 0x07\\
+        \texttt{8} & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 127 & 0x7F\\
+        \texttt{9} & 1 & 1 & 0 & 1 & 1 & 1 & 1 & 111 & 0x6F\\
+        \texttt{A} & 1 & 1 & 1 & 0 & 1 & 1 & 1 & 119 & 0x77\\
+        \texttt{B} & 1 & 1 & 1 & 1 & 1 & 0 & 0 & 124 & 0x7C\\
+        \texttt{C} & 0 & 1 & 1 & 1 & 0 & 0 & 1 & ~57 & 0x39\\
+        \texttt{D} & 1 & 0 & 1 & 1 & 1 & 1 & 0 & ~94 & 0x5E \\
+        \texttt{E} & 1 & 1 & 1 & 1 & 0 & 0 & 1 & 121 & 0x79\\
+        \texttt{F} & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 113 & 0x71\\
+        \texttt{-} & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 128 & 0x40\\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+\FloatBarrier
+\section*{Results and Analysis}
+
+\subsection*{Assignment 1}
+
+This assignment involved implementing a class that provided an interface for reading from and writing to the control registers on the DE1-SoC board. Our implementation can be found in Listings~\ref{lst:de1soc\string_register\string_io.h} and~\ref{lst:de1soc\string_register\string_io.cpp} in the Appendix. This class was named \texttt{DE1SoCRegisterIO} rather than \texttt{DE1SoChps} as suggested in the lab instructions to better reflect its role in the codebase.
+
+To simplify the implementation of \texttt{DE1SoCRegisterIO}, we implemented a small header-only library (\texttt{posix\_api.h}) that encapsulates all interactions with the POSIX API behind an object-oriented interface. This library can be found in Listing~\ref{lst:posix\string_api.h} below. The initialization and finalization of the memory mapping on the DE1SoC were handled by the \texttt{MemoryMapping} class defined in this library. Since the memory mapping was bound by the lifetime of a \texttt{MemoryMapping} instance, our implementation of \texttt{DE1SoCRegisterIO} was not responsible for managing any resources. Therefore, we did not include a user-provided destructor in the implementation of \texttt{DE1SoCRegisterIO} \cite[C.20]{stroustrup-c++-core-guidelines}.
+
+Our implementation of \texttt{DE1SoCRegisterIO} inherits from an abstract class called \texttt{RegisterIO}, which can be found in Listing~\ref{lst:register\string_io.h}. By inserting our implementation into a class hierarchy, we gained the ability to test our code in absence of a hardware connection by implementing a mock class (see Listing~\ref{lst:mock\string_register\string_io.h}). This class that mimics the interface of \texttt{DE1SoCRegisterIO} while in reality simply logging register accesses rather than performing memory-mapped I/O.
+
+
+\subsection*{Assignment 2}
+
+This assignment consisted of implementing a class to control the state of the seven-segment displays on the DE1-SoC board. The original lab instructions stipulated that this class should inherit from \texttt{DE1SoCRegisterIO}, but this requirement was amended by the instructor to allow for composition instead. Our implementation, which was named \texttt{SevenSegmentDisplay}, can be found in  Listings~\ref{lst:seven\string_segment\string_display.h} and~\ref{lst:seven\string_segment\string_display.tpp} below.
+
+In our implementation, we used a different naming convention than that used in the examples from the lab instructions.  The following table describes the correspondence between the function signatures from the lab instructions and the function signatures that were implemented.
+
+\begin{table}[h]\centering
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Example Function Signature} & \textbf{Implemented Function Signature}\\
+        \hline
+        \texttt{void Hex\_ClearAll()} & \texttt{void clear\_all()}\\
+        \texttt{void Hex\_ClearSpecific(int)} & \texttt{void clear\_display(size\_t)}\\
+        \texttt{void Hex\_WriteSpecific(int, int)} & \texttt{void write\_display\_character(size\_t, char)}\\
+        \texttt{void Hex\_WriteNumber(int)} & \texttt{void print\_hex(int)}\\
+        \hline
+    \end{tabular}
+\end{table}
+
+In the interest of portability, our implementation was written to be decoupled from the DE1-SoC board. All board-specific attributes could be configured from the calling code, including the register word size, the number of seven-segment-displays, and the locations of the display control registers.
+
+\subsection*{Assignment 3}
+
+This assignment consisted of replicating the memory-mapped I/O demo program from Lab~\#3 \cite{report-3} with the added functionality of printing a hexadecimal representation of the counter's value to the seven-segment displays.
+
+To match the style of the class \texttt{SevenSegmentDisplay} implemented in Assignment~2, we split the class \texttt{LEDControl} from the previous lab into two discrete classes, \texttt{LedArray} and \texttt{SwitchArray}, which were responsible for managing the state of the board's LEDs and switches, respectively. The implementation of \texttt{LedArray} can be found in Listings~\ref{lst:led\string_array.h} and~\ref{lst:led\string_array.tpp}, and that of \texttt{SwitchArray} can be found in Listings~\ref{lst:switch\string_array.h} and~\ref{lst:switch\string_array.tpp}.
+
+As noted in Assignment 2, we followed a different naming convention than that used in the lab examples.
+The following table describes the correspondence between the example function signatures and the functions that were implemented..
+ 
+\begin{table}[h]\centering
+    \begin{tabular}{ll}
+        \hline
+        \textbf{Example Function Signature} & \textbf{Implemented Function Signature}\\
+        \hline
+        \texttt{void LEDControl::Write1Led(int,int)} & \texttt{void LedArray::write(size\_t,bool)}\\
+        \texttt{void LEDControl::WriteAllLeds(int)} & \texttt{void LedArray::write\_all(Register)}\\
+        \texttt{int LEDControl::Read1Switches(int)} & \texttt{bool SwitchArray::read(size\_t) const}\\
+        \texttt{int LEDControl::ReadAllSwitches()} & \texttt{State SwitchArray::read\_all() const}\\
+        \hline
+    \end{tabular}
+\end{table}
+ 
+ 
+As with our interface for the seven-segment displays, these classes were designed to be decoupled from the DE1-SoC board. All board-specific attributes could be configured from the calling code, including the register word size, the number of LEDs and switches, and the locations of the relevant control registers.
+
+The modified demo program can be found in Listing~\ref{lst:lab4.cpp}. This program uses the \texttt{WrappingCounter} class from the previous lab to manage the counter. A GNU makefile written to facilitate the compilation of the sources for this assignment. This file can be found in Listing~\ref{lst:makefile} below.
+
+The complete sources for this assignment were compiled using the following shell command, which resulted in the given output.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ make lab4-arm
+arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion -D_GLIBCXX_USE_CXX11_ABI=0 -c de1soc_register_io.cpp -o de1soc_device.o
+arm-linux-gnueabihf-g++ -std=c++17 -Wall -Wextra -pedantic -Werror -Wconversion -D_GLIBCXX_USE_CXX11_ABI=0 lab4.cpp de1soc_device.o -o lab4-arm
+\end{lstlisting}
+This compilation procedure only generated two object files since many of the utilities defined for this lab were implemented using class templates. These class templates needed to be compiled in the translation units that used them rather than being linked against from separate object files\footnote{This is true assuming that no explicit specialization is included in the header file that defines the template. We did not use explicit specialization in this lab.}.
+
+The resulting executable was transferred to the DE1-SoC board using the procedure described in \cite{report-0}, and the build directory was cleared using the following command.
+\begin{lstlisting}[style=labreportstyle-sh]
+$ make clean
+rm de1soc_device.o lab4-arm
+\end{lstlisting}
+
+
+\section*{Conclusion}
+
+This lab illustrated the use of memory-mapped I/O to facilitate interactions with hardware devices in C++ programs. A basic interface for writing hexadecimal digits to the seven-segment displays on the DE1-SoC was created. This interface was then used to extend a program that was developed during a previous lab. Basic object-oriented design principles were discussed and used to guide the design of the code for this lab. 
+
+A possible extension for this lab would be introducing operator overloads to the hardware interface classes. For example, the function \texttt{SwitchArray::read(size\_t)} could be supplemented or replaced by an overload of \texttt{operator[]}. This change would allow for a less ``noisy'' interface with hardware devices, which may improve the readability of the code.
+
+
+\clearpage
+\section*{Appendix}
+\renewcommand{\thelstlisting}{A.\arabic{lstlisting}}
+
+\includecode{posix\string_api.h}
+Referenced  \cite{open-std-N4659,unix-man-fcntl,unix-man-mmap,so-arm-unaligned,so-safe-unaligned,cppreference-underlyingtype,stroustrup-c++-core-guidelines}.
+
+\includecode{de1soc\string_config.h}
+
+\includecode{register\string_io.h}
+
+\includecode{de1soc\string_register\string_io.h}
+
+\includecode{de1soc\string_register\string_io.cpp}
+
+\includecode{seven\string_segment\string_display.h}
+
+\includecode{seven\string_segment\string_display.tpp}
+
+\includecode{led\string_array.h}
+
+\includecode{led\string_array.tpp}
+
+\includecode{switch\string_array.h}
+
+\includecode{switch\string_array.tpp}
+
+\includecode{mock\string_register\string_io.h}
+Referenced  \cite{cppreference-map,so-map}.
+
+\includecode{lab4.cpp}
+Referenced \cite{cppreference-user-lit,cppreference-thread,so-sleep,open-std-P0627R0}
+
+\includecode{wrapping\string_counter.h}
+Referenced \cite{cppreference-inc-op}.
+
+\includecode[sh]{makefile}
+Referenced \cite{gnu-make}.
+
+
+
+\clearpage
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab-4.bib}
+
+\bibliographystyle{unsrt}
+\end{document}

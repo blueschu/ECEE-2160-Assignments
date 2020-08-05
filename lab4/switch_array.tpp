@@ -23,8 +23,11 @@ bool SwitchArray<N, Reg>::read(std::size_t index) const
     return switch_state & 1u;
 }
 
+// Note: trailing return type used to bring State into scope without repeating
+// type info. Using conventional return type syntax, we'd need to write out
+// "typename SwitchArray<N, Reg>::State"
 template<std::size_t N, typename Reg>
-typename SwitchArray<N, Reg>::State SwitchArray<N, Reg>::read_all() const
+auto SwitchArray<N, Reg>::read_all() const -> State
 {
     return State{m_register_io->read_register(m_base_offset)};
 }

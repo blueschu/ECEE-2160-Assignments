@@ -7,18 +7,19 @@
  * References
  * ==========
  *
- *
- * [P0627r0] http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0627r0.pdf
+ * [cpp-literals]   https://en.cppreference.com/w/cpp/language/user_literal
+ * [cpp-thread]     https://en.cppreference.com/w/cpp/header/thread
+ * [so-sleep]       https://stackoverflow.com/questions/1658386/
+ * [P0627r0]        http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0627r0.pdf
  *
  */
 
 #include <chrono>                   // for std::chrono::duration
 #include <thread>                   // for std::this_thread
 
-#include "de1soc_properties.h"      // for de1soc_config
+#include "de1soc_config.h"          // for de1soc_config
 #include "de1soc_register_io.h"     // for DE1SoCRegisterIO
 #include "wrapping_counter.h"       // for WrappingCounter
-
 
 #ifdef LAB4_MOCK
 #include "mock_register_io.h"
@@ -28,18 +29,18 @@
 // Using anonymous namespace to given symbols internal linkage.
 namespace {
 
-// For access to duration literals.
+// For access to duration literals [cpp-literals].
 using namespace std::literals::chrono_literals;
 
 /**
  * The period of time elapsed between button reads.
  */
-constexpr std::chrono::duration REFRESH_PERIOD = 1ms;
+constexpr std::chrono::duration k_refresh_period{1ms};
 
 /**
  * The state of the board's switches that signals the program to exit.
  */
-constexpr int SWITCH_EXIT_SENTINEL = 0;
+constexpr int k_switch_exit_sentinel{0};
 
 /**
  * Convenience structure to hold all DE1-SoC hardware device interfaces.
@@ -70,7 +71,7 @@ int main()
     );
 #endif
 
-    // Initialize all DE1-Soc hardware interfaces.
+    // Initialize all DE1-SoC hardware interfaces.
     DE1SoC board{
         {register_io, {hex3_hex0_base, hex5_hex4_base}},
         {register_io, ledr_base},
@@ -90,6 +91,12 @@ void run_bottom_demo(DE1SoC& board)
     // Counter holding the state to be written to the board's LEDs.
     WrappingCounter counter{(1u << de1soc_config::led_count) - 1};
 
+    // Set the counter's starting value to be equal to the current state of
+    // the switches.
+    counter.apply([&](auto){
+        return board.switches.read_all().bits;
+    });
+
     // The state of the DE1SoC's button's during the previous cycle.
     de1soc_config::Keys::State previous_button{};
 
@@ -105,7 +112,7 @@ void run_bottom_demo(DE1SoC& board)
         const bool no_button_change = button_press == previous_button;
 
         if (wait_for_unpress || no_button_change) {
-            std::this_thread::sleep_for(REFRESH_PERIOD);
+            std::this_thread::sleep_for(k_refresh_period);
             continue;
         }
 
@@ -117,7 +124,7 @@ void run_bottom_demo(DE1SoC& board)
             counter.apply([=](auto) { return switch_state; });
 
             // Check if the current state of the switches matches the exit state.
-            if (switch_state == SWITCH_EXIT_SENTINEL) {
+            if (switch_state == k_switch_exit_sentinel) {
                 // Stop the demo program.
                 break;
             }
@@ -150,7 +157,7 @@ void run_bottom_demo(DE1SoC& board)
                     // Since the above is true, we can see that all possible
                     // button states are enumerated above.
 
-                    // Signal to compiler that this branch is impossible [P0627r0].
+                    // Signal the compiler that this branch is impossible [P0627r0].
                     __builtin_unreachable();
 
                 }
@@ -159,12 +166,13 @@ void run_bottom_demo(DE1SoC& board)
 
         // Update the board's LEDs and seven-segment display.
         // Use explicit casts to suppress warnings about loss of precision.
-        board.leds.write_all(static_cast<unsigned int>(counter));
-        board.display.show_number(static_cast<int>(counter));
+        board.leds.write_all(static_cast<de1soc_config::Register>(counter));
+        board.display.print_hex(static_cast<int>(counter));
 
         previous_button = button_press;
 
-        std::this_thread::sleep_for(REFRESH_PERIOD);
+        // [cpp-thread, so-sleep]
+        std::this_thread::sleep_for(k_refresh_period);
 
     } // while (true)
 

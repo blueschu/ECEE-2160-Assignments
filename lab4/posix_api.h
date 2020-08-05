@@ -17,6 +17,7 @@
  * [so-unaligned-1] https://stackoverflow.com/questions/13881487/should-i-worry-about-the-alignment-during-pointer-casting
  * [so-unaligned-2] https://stackoverflow.com/questions/32062894/take-advantage-of-arm-unaligned-memory-access-while-writing-clean-c-code
  * [cpp-underlying] https://en.cppreference.com/w/cpp/types/underlying_type
+ * [isocpp-guidelines] https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
  *
  */
 
@@ -94,7 +95,7 @@ class File {
         m_fd = raw_posix::open(file_name, static_cast<Flag>(flags));
     }
 
-    // Destructor.
+    // Destructor. Marked noexcept per C.37 [isocpp-guidelines].
     ~File() noexcept
     {
         if (m_fd != k_failed) {
@@ -105,13 +106,17 @@ class File {
         }
     }
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     File(const File&) = delete;
 
+    // Move constructor, C.21.
     File(File&& other) noexcept
         : m_fd{std::exchange(other.m_fd, k_failed)} {}
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     File& operator=(const File&) = delete;
 
+    // Move assignment, C.21.
     File& operator=(File&& other) noexcept
     {
         m_fd = std::exchange(other.m_fd, k_failed);
@@ -207,7 +212,7 @@ class MemoryMapping {
         const File& fd,
         std::size_t bridge_span,
         MemoryFlag protection_flags,
-        std::size_t bridge_base
+        std::uintptr_t bridge_base
     ) : m_map_span{bridge_span}
     {
         using Flag = std::underlying_type<MemoryFlag>::type;
@@ -224,7 +229,7 @@ class MemoryMapping {
         );
     }
 
-    // Destructor
+    // Destructor. Marked noexcept per C.37 [isocpp-guidelines].
     ~MemoryMapping() noexcept
     {
         if (m_virtual_base != MAP_FAILED) {
@@ -242,14 +247,18 @@ class MemoryMapping {
         }
     }
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     MemoryMapping(const MemoryMapping&) = delete;
 
+    // Move constructor, C.21 [isocpp-guidelines].
     MemoryMapping(MemoryMapping&& other) noexcept
         : m_virtual_base{std::exchange(other.m_virtual_base, MAP_FAILED)},
           m_map_span{std::exchange(other.m_map_span, 0)} {}
 
+    // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
     MemoryMapping& operator=(const MemoryMapping&) = delete;
 
+    // Move assignment, C.21 [isocpp-guidelines].
     MemoryMapping& operator=(MemoryMapping&& other) noexcept
     {
         m_virtual_base = std::exchange(other.m_virtual_base, MAP_FAILED);
@@ -265,6 +274,18 @@ class MemoryMapping {
         return m_virtual_base != MAP_FAILED;
     }
 
+    /**
+     * Returns a pointer to the virtual address corresponding to the physical
+     * memory location that is offset from the mapping base by the given offset.
+     *
+     *
+     * @tparam T Integral type uses to represent the value at the target location.
+     * @param offset Offset from memory mapping base of target location.
+     * @return Virtual address pointer to corresponding to the target.
+     * @throws MemoryMappingError if the memory mapping does not exist, if the
+     *          target location falls outside of the memory mapping, or if
+     *          the target location is not aligned on a `T` boundary.
+     */
     template<typename T>
     volatile T* access_memory(std::size_t offset)
     {
@@ -290,6 +311,15 @@ class MemoryMapping {
         return access_memory_unchecked<T>(offset);
     }
 
+    /**
+     * Returns a pointer to the virtual address corresponding to the physical
+     * memory location that is offset from the mapping base by the given offset,
+     * without checking the validity of the access.
+     *
+     * @tparam T Integral type uses to represent the value at the target location.
+     * @param offset Offset from memory mapping base of target location.
+     * @return Virtual address pointer to corresponding to the target.
+     */
     template<typename T>
     volatile T* access_memory_unchecked(std::size_t offset)
     {
