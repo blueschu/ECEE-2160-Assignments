@@ -162,7 +162,9 @@ class SevenSegmentDisplay {
 
     // Move constructor, C.21 [isocpp-guidelines].
     SevenSegmentDisplay(SevenSegmentDisplay&& other) noexcept
-        : m_register_values{std::exchange(other.m_register_values, {})},
+        : m_register_values{std::move(other.m_register_values)},
+          m_register_io{std::move(other.m_register_io)},
+          m_register_offsets{std::move(other.m_register_offsets)},
           m_owner{std::exchange(other.m_owner, false)} {}
 
     // Prevent copying from lvalue, C.21, C.81. [isocpp-guidelines].
@@ -171,9 +173,10 @@ class SevenSegmentDisplay {
     // Move assignment, C.21 [isocpp-guidelines].
     SevenSegmentDisplay& operator=(SevenSegmentDisplay&& other) noexcept
     {
-        m_register_values = std::exchange(other.m_register_values, {});
+        m_register_values = std::move(other.m_register_values);
+        m_register_io = std::move(other.m_register_io);
+        m_register_offsets = std::move(other.m_register_offsets);
         m_owner = std::exchange(other.m_owner, false);
-
         return *this;
     }
 
