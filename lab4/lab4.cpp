@@ -16,6 +16,7 @@
 
 #include <chrono>                   // for std::chrono::duration
 #include <thread>                   // for std::this_thread
+#include <memory>                   // for std::make_shared
 
 #include "de1soc_config.h"          // for de1soc_config
 #include "de1soc_register_io.h"     // for DE1SoCRegisterIO

@@ -10,7 +10,7 @@
 
 #include <climits>      // for CHAR_BIT
 #include <cstddef>      // for std::size_t
-#include <memory>
+#include <memory>       // for std::shared_ptr
 
 #include "register_io.h"
 

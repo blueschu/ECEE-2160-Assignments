@@ -9,7 +9,8 @@
 #ifndef ECEE_2160_LAB_REPORTS_SWITCH_ARRAY_H
 #define ECEE_2160_LAB_REPORTS_SWITCH_ARRAY_H
 
-#include <cstddef>
+#include <cstddef>      // for std::size_t
+#include <memory>       // for std::shared_ptr
 
 #include "register_io.h"
 

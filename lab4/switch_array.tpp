@@ -14,7 +14,7 @@ bool SwitchArray<N, Reg>::read(std::size_t index) const
         throw std::out_of_range("index must not exceed switch array range");
     }
     // The current state of the switches.
-    Register switch_state = read_all();
+    Register switch_state = m_register_io->read_register(m_base_offset);
 
     // Shift the switch state so that the target switch's bit is the LSB.
     switch_state >>= index;

@@ -16,6 +16,7 @@
 #define ECEE_2160_LAB_REPORTS_SEVEN_SEGMENT_DISPLAY_H
 
 #include <array>                // for std::array
+#include <memory>               // for std::shared_ptr
 
 #include "register_io.h"        // for RegisterIO
 
