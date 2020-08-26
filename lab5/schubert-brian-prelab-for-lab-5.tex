@@ -1,0 +1,156 @@
+\documentclass[11pt, letterpaper]{article} % Copyright (c) 2020 Brian Schubert
+
+
+
+\def\LABnumber{5}
+\def\LABdatedue{August 5th, 2020}
+\def\LABdatesubmitted{August 5th, 2020}
+\def\LABtitle{Introduction to Quartus}
+
+
+\input{../ecee-2160-header.tex}
+\def\LABreportheading{Prelab Assignment for Lab}
+\rhead{\LABcoursetitle\\Prelab for Lab Assignment \LABnumber}
+
+
+
+\begin{document}
+\makelabtitle
+  
+\section*{Summary}
+
+This prelab assignment consisted of preparing truth tables and circuit diagrams for the half- and full-adder.
+
+\section*{Submission}
+
+\begin{table}[h]\centering
+    \caption{Prelab Truth Tables.}
+    \def\arraystretch{1.2}
+    \begin{subtable}[t]{0.48\linewidth}\centering
+        \caption{Half-Adder}
+        \begin{tabular}{|cc|cc|}
+            \hline
+            \multicolumn{2}{|m{1.5cm}|}{\bfseries\centering Inputs} & 
+            \multicolumn{2}{m{1.5cm}|}{\bfseries\centering Outputs}\\
+            $\boldsymbol{A}$ & $\boldsymbol{B}$ & $\boldsymbol{C}$ & $\boldsymbol{S}$\\
+            \hline
+            0 & 0 & 0 & 0\\
+            0 & 1 & 0 & 1\\
+            1 & 0 & 0 & 1\\
+            1 & 1 & 1 & 0\\
+            \hline
+        \end{tabular}
+    \end{subtable}
+    \hfill\null
+    \begin{subtable}[t]{0.48\linewidth}\centering
+        \caption{Full-Adder}
+        \begin{tabular}{|ccc|cc|}
+            \hline
+            \multicolumn{3}{|m{2.25cm}|}{\bfseries\centering Inputs} & 
+            \multicolumn{2}{m{1.5cm}|}{\bfseries\centering Outputs}\\
+            $A$ & $B$ &  $C_\mathrm{in}$ & $C_\mathrm{out}$ & $S$\\
+            \hline
+            0 & 0 & 0 & 0 & 0\\
+            0 & 0 & 1 & 0 & 1\\
+            0 & 1 & 0 & 0 & 1\\
+            0 & 1 & 1 & 1 & 0\\
+            1 & 0 & 0 & 0 & 1\\
+            1 & 0 & 1 & 1 & 0\\
+            1 & 1 & 0 & 1 & 0\\
+            1 & 1 & 1 & 1 & 1\\
+            \hline
+        \end{tabular}
+    \end{subtable}
+\end{table}
+
+In preparation for creating the circuit diagrams, these truth tables were translated into boolean equations and then reduced using boolean algebra identities as follows \cite{fell-discrete-structure}.
+
+\paragraph{Half-Adder}
+\begin{align*}
+    S(A,B) &= A'B + AB' = A\oplus B \\
+    C(A,B) &= A B
+\end{align*}
+
+\paragraph{Full-Adder}
+\begin{align*}
+    S(A,B,C_\mathrm{in}) &= A'B'C_\mathrm{in} + A'BC_\mathrm{in}' + AB'C_\mathrm{in}' + ABC_\mathrm{in}\\
+        &= A'(B'C_\mathrm{in} + BC_\mathrm{in}') + A(B'C_\mathrm{in}' + BC_\mathrm{in})\\
+        &= A'\left(B \oplus C\right) +A((B + C_\mathrm{in})' +BC_\mathrm{in})\\
+         &= A'\left(B \oplus C\right) +A(B\oplus C_\mathrm{in})'\\
+        &= A \oplus (B \oplus C_\mathrm{in})\\
+    C_\mathrm{out}(A,B,C_\mathrm{in}) &= A'BC_\mathrm{in} + AB'C_\mathrm{in} + ABC_\mathrm{in}' + ABC_\mathrm{in}\\
+        &= C_\mathrm{in} (A'B + AB') + AB\cancelto{1}{(C_\mathrm{in}' + C_\mathrm{in})}\\
+        &= C_\mathrm{in}\left(A\oplus B\right) + AB
+\end{align*}
+
+These equation were then translated to the following circuit diagrams.
+
+\begin{figure}[h]\centering
+    \begin{subfigure}{0.38\linewidth}\centering
+        \begin{circuitikz}
+            \node[xor port] (xor1) at (0, 0) {};
+            \node[and port] (and1) at (0,-2) {};
+            
+            \draw (xor1.in 1) to[short] ++ (-1, 0) node[left] {$A$};
+            \draw (xor1.in 2) to[short] ++ (-1, 0) node[left] {$B$};
+            \draw (xor1.out) to[short] ++ (1, 0) node[right] {$S$};
+            
+            \draw (and1.in 1) to[short] ++ (-0.2, 0) node (n1) {} to[short, -*] (n1 |- xor1.in 1);
+            \draw (and1.in 2) to[short] ++ (-0.6, 0) node (n2) {} to[short, -*] (n2 |- xor1.in 2);
+            \draw (and1.out) to[short] ++ (1, 0) node[right] {$C$};
+            
+        \end{circuitikz}
+        \caption{Half-Adder}
+    \end{subfigure}
+    \begin{subfigure}{0.58\linewidth}\centering
+        \begin{circuitikz}
+            \node[xor port] (xor1) at (0, 0) {};    % A xor B
+            \node[and port] (and1) at (0,-3) {};    % A and B
+            \node[and port] (and2) at (2,-2) {};    % (A xor B) and C_in
+            \node[xor port] (xor2) at (3,-0.5) {};  % (A xor B) xor C_in
+            \node[or port] (or1) at (4,-2.75) {};   % (A and B) or ((A xor B) and C_in)
+            
+            % A xor B
+            \draw (xor1.in 1) to[short] ++ (-1, 0) node[left] {$A$};
+            \draw (xor1.in 2) to[short] ++ (-1, 0) node[left] {$B$};
+            
+            % A and B
+            \draw (and1.in 1) to[short] ++ (-0.2, 0) node (n1) {} 
+                to[short, -*] (n1 |- xor1.in 1);
+            \draw (and1.in 2) to[short] ++ (-0.6, 0) node (n2) {} 
+                to[short, -*] (n2 |- xor1.in 2);
+            
+            % (A xor B) xor C_in
+            \draw (xor2.in 1) to[short] ++ (-0.5, 0) node (n3) {}
+                to[short] (n3 |- xor1.out) 
+                to[short] (xor1.out);
+            \draw (xor2.in 2) to[short] ++ (-4, 0) node[left] (cin) {$C_\mathrm{in}$};
+            \draw (xor2.out) to[short] ++ (1.25, 0) node[right] {$S$};
+            
+            % (A xor B) and C_in
+            \draw (and2.in 1) to[short] ++ (-0.25, 0) node (n4) {}
+                to[short, -*] (n4 |- xor1.out);
+            \draw (and2.in 2) to[short] ++ (-0.75, 0) node (n5) {}
+                to[short, -*] (n5 |- cin);
+            
+            % (A and B) or ((A xor B) and C_in)
+            \draw (or1.in 1) to[short] (or1.in 1 |- and2.out)
+                to[short] (and2.out);
+            \draw (or1.in 2) to[short] (and1.out);
+             \draw (or1.out) to[short] ++ (0.25, 0) node[right] {$C_\mathrm{out}$};
+                
+        \end{circuitikz}
+        \caption{Full-Adder}
+    \end{subfigure}
+    \caption{Circuit diagrams for half- and full-adder.}
+\end{figure}
+
+% Post lab: style for drawing logic circuits:
+% https://tex.stackexchange.com/questions/449025/how-to-draw-logic-gates-in-tikz
+
+\bibliography{../ecee-2160-common.bib,./ecee-2160-lab-5.bib}
+
+\bibliographystyle{unsrt}
+
+
+\end{document}
