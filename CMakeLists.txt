@@ -15,7 +15,6 @@ add_compile_options(-Wall -Wextra -pedantic -Werror -Wconversion)
 set(CMAKE_CXX_STANDARD 17)
 
 # Lab reports
-add_subdirectory(common)
 add_subdirectory(lab0)
 add_subdirectory(lab1)
 add_subdirectory(lab2)
